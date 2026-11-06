@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./lpay-wallet.js"></script>
+<title>print2</title>
+<style>
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+html,body{margin:0;padding:0;background:#1c1c1e;color:white}
+.sheet{padding:18px 14px 30px 14px;background:#1c1c1e}
+.amt{text-align:center;font-size:32px;font-weight:800;margin:8px 0 18px 0}
+.info-box{background:#2a2a2a;border-radius:12px;padding:6px 14px}
+.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #333;font-size:13px}
+.row:last-child{border:none}
+.row span:first-child{color:#999}
+.row span:last-child{font-weight:600;text-align:right;max-width:65%}
+.pay-title{display:flex;justify-content:space-between;margin:18px 4px 10px 4px;font-size:13px;color:#fff}
+.pay-title span:last-child{color:#999;font-size:12px}
+.balance-box{background:#2a2a2a;border-radius:12px;padding:14px}
+.bal-head{display:flex;align-items:center;gap:10px}
+.radio{width:18px;height:18px;border:2px solid #00d68f;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.radio i{width:8px;height:8px;background:#00d68f;border-radius:50%;display:block}
+.insuf{color:#ff4d4d;font-size:12px;margin:6px 0 0 28px;display:none}
+.btn-pay{width:100%;background:#2a2a2a;color:#666;border:none;padding:16px;border-radius:30px;font-weight:800;margin-top:20px;font-size:15px;pointer-events:none}
+.btn-pay.enabled{background:#00d68f;color:#000;pointer-events:auto}
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="amt" id="topAmt">₦1,000.00</div>
+  
+  <div class="info-box">
+    <div class="row"><span>Bank</span><span id="rBank">OPay Digital Services Limited (OPay)</span></div>
+    <div class="row"><span>Account Number</span><span id="rAcc"></span></div>
+    <div class="row"><span>Name</span><span id="rName"></span></div>
+    <div class="row"><span>Amount</span><span id="rAmt">₦1,000.00</span></div>
+    <div class="row"><span>Fee</span><span>₦0.00</span></div>
+  </div>
+
+  <div class="pay-title"><span>Payment Method</span><span>All ></span></div>
+  
+  <div class="balance-box">
+    <div class="bal-head">
+      <div class="radio"><i></i></div>
+      <div style="font-size:13px;font-weight:500">Available Balance (<span id="balText">₦10,000.00</span>)</div>
+    </div>
+    <div class="insuf" id="insufText">Insufficient balance</div>
+  </div>
+
+  <button class="btn-pay" id="payBtn" onclick="payNow()">Pay ₦1,000.00</button>
+</div>
+
+<script>
+const $=id=>document.getElementById(id),name=localStorage.getItem('transfer_name')||'',bank=localStorage.getItem('transfer_bank')||'',account=localStorage.getItem('transfer_account')||'',amount=Number(localStorage.getItem('transfer_amount')||0),fmt=n=>'₦'+Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2});$('topAmt').textContent=fmt(amount);$('rBank').textContent=bank;$('rAcc').textContent=account;$('rName').textContent=name;$('rAmt').textContent=fmt(amount);const btn=$('payBtn'),msg=$('insufText');let balance=0,busy=false;
+async function load(){try{balance=await LPayWallet.balance();$('balText').textContent=fmt(balance);if(!amount||amount>balance){msg.style.display='block';btn.disabled=true;btn.textContent='Insufficient balance';}else{msg.style.display='none';btn.disabled=false;btn.textContent='Pay '+fmt(amount);}}catch(e){msg.textContent=e.message;msg.style.display='block';btn.disabled=true;}}
+async function payNow(){if(busy||btn.disabled)return;busy=true;btn.disabled=true;btn.textContent='Processing…';try{const {data,error}=await LPayWallet.client.rpc('lpay_debit_wallet',{p_amount:Math.round(amount),p_title:'Transfer to '+(name||'bank account'),p_metadata:{category:'transfer',name,bank,account,fee:0}});if(error)throw error;const now=new Date(),tx={id:data.reference,reference:data.reference,type:'out',name,bank,account,amount,date:now.toLocaleDateString('en-GB'),time:now.toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'}),timestamp:Date.now(),status:'Successful',metadata:{category:'transfer',name,bank,account}};sessionStorage.setItem('lpayReceipt',JSON.stringify(tx));location.href='transaction2.html';}catch(e){msg.textContent=e.message;msg.style.display='block';busy=false;btn.disabled=false;btn.textContent='Retry payment';}}
+load();
+</script></body></html>

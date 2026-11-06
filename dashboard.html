@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Opay</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./lpay-wallet.js"></script>
+<style>
+:root{
+  --page-width: 100%;
+  --page-max-width: 480px;
+  --page-min-height: 100vh;
+  --page-bg: #1b1b1b;
+  --nav-bg: #111111;
+  --green-main: #1dce9f;
+  --green-dark: #00a76f;
+  --content-padding-bottom: 120px;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:var(--page-bg);color:#fff;width:var(--page-width);max-width:var(--page-max-width);margin:0 auto;padding-bottom:var(--content-padding-bottom);min-height:var(--page-min-height)}
+button,a{outline:none!important}
+.top{padding:16px 14px;display:flex;justify-content:space-between;align-items:center;background:var(--page-bg);width:100%}
+.top-left{display:flex;align-items:center;gap:10px}
+.top-left img{width:34px;height:34px;border-radius:50%;background:#222;object-fit:cover}
+.top-right{display:flex;gap:22px;align-items:center}
+.top-right img{width:24px;height:24px;object-fit:contain}
+.card{background:linear-gradient(135deg,var(--green-main),var(--green-dark));margin:0 12px;border-radius:18px;padding:16px 16px;position:relative;min-height:96px;width:calc(100% - 24px)}
+.card-top{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.card-top-left{display:flex;align-items:center;gap:8px}
+.card-top-left img{width:18px;height:18px;cursor:pointer}
+.card-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.balance{font-size:24px;font-weight:800;cursor:pointer;min-width:120px}
+.add{border:none;background:#101010;color:#fff;padding:10px 18px;border-radius:22px;font-size:13px;font-weight:600}
+.bonus{background:#2c2c2c;margin:14px 12px;border-radius:16px;padding:16px 14px;display:flex;justify-content:space-between;align-items:center;width:calc(100% - 24px)}
+.bonus-left{display:flex;gap:12px;align-items:center}
+.bonus-left img{width:28px;height:28px;object-fit:contain;border-radius:8px;background:#222}
+.bonus-left b{font-size:13px;font-weight:500}
+.bonus-left p{font-size:11.5px;color:#888;margin-top:3px}
+.bonus-right{color:var(--green-main);text-align:right}
+.bonus-right b{font-size:13.5px}
+.bonus-right p{font-size:11px}
+.quick-box{background:#2c2c2c;margin:14px 12px;border-radius:16px;padding:18px 14px;position:relative;width:calc(100% - 24px)}
+.quick{display:flex;justify-content:space-around;text-align:center}
+.quick-item img{width:26px;height:26px;margin:0 auto 8px;display:block;object-fit:contain}
+.quick-item p{font-size:12px;color:#ccc}
+.email{background:#2c2c2c;margin:14px 12px;border-radius:16px;padding:16px 14px;display:flex;gap:12px;align-items:center;width:calc(100% - 24px)}
+.email img{width:40px;height:36px;object-fit:contain}
+.email h4{font-size:13.5px}
+.email p{font-size:11.5px;color:#888;margin-top:3px}
+.grid-box{background:#2c2c2c;margin:14px 12px;border-radius:16px;padding:18px 14px;position:relative;width:calc(100% - 24px)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px 0;text-align:center}
+.g{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+.g img{width:28px;height:28px;display:block;object-fit:contain}
+.g p{font-size:11.5px;color:#ccc}
+.tag{position:absolute;top:-10px;left:50%;transform:translateX(-10px);font-size:7px;padding:2px 5px;border-radius:6px;font-weight:700;white-space:nowrap}
+.up{background:#3a2323;color:#ff9a9a}.hot{background:#ff3b30;color:#fff}.me{background:#fff;color:#ff3b30;border:1px solid #ff3b30}
+.promo{background:#2c2c2c;margin:14px 12px;border-radius:16px;padding:16px 14px;width:calc(100% - 24px)}
+.promo-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.promo-head b{font-size:13.5px}
+.promo-head img{width:20px;height:20px;object-fit:contain}
+.promo-inner{display:flex;justify-content:space-between;align-items:center}
+.promo-left{display:flex;gap:12px;align-items:center}
+.promo-left img{width:32px;height:32px;object-fit:contain}
+.promo-left b{font-size:13px}
+.promo-left span{font-size:10.5px;color:#888;display:block;margin-top:3px}
+.go{background:var(--green-main);color:#000;border:none;padding:10px 24px;border-radius:22px;font-weight:800;font-size:13.5px}
+.awoof{background:#2c2c2c;margin:14px 12px;border-radius:16px;padding:16px 14px;display:flex;gap:12px;align-items:center;width:calc(100% - 24px)}
+.awoof img{width:34px;height:34px;object-fit:contain}
+.awoof h4{font-size:13px}
+.awoof p{font-size:11.5px;color:#888;margin-top:3px}
+.sec{position:fixed;bottom:88px;right:12px;text-align:center;z-index:50;display:flex;flex-direction:column;align-items:center}
+.sec img{width:120px;height:120px;display:block;object-fit:contain;transform:translateY(25px)}
+.sec span{background:#e6f5ee;color:var(--green-dark);border:1px solid var(--green-dark);font-size:11px;padding:7px 14px;border-radius:16px;display:inline-block;margin-top:8px;font-weight:700;white-space:nowrap}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--page-max-width);background:var(--nav-bg);border-top:1px solid #222;display:flex;justify-content:space-around;padding:10px 0 12px}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:#666;font-size:10.5px}
+.nav-item.active{color:var(--green-main)}
+.nav-item img{width:22px;height:22px;display:block;object-fit:contain}
+.hit{position:absolute;background:transparent;border:none;cursor:pointer}
+.eye-hit{left:32%;top:8%;width:12%;height:30%}.history-hit{left:54%;top:2%;width:44%;height:38%}.add-hit{right:2%;top:58%;width:32%;height:38%;border-radius:20px}
+.to-opay{left:0;top:0;width:33%;height:100%}.to-bank{left:33%;top:0;width:33%;height:100%}.data-hit{left:25%;top:0;width:25%;height:50%}
+</style>
+</head>
+<body>
+<div class="top">
+<div class="top-left"><img src="avatar.png" id="userAvatar" fetchpriority="high" decoding="async" onerror="this.style.display='none'"><span style="font-size:14px;font-weight:600" id="userNameDisplay"></span></div>
+<div class="top-right">
+<div style="position:relative"><img src="help.png" decoding="async" onerror="this.style.display='none'"><span style="position:absolute;top:-8px;right:-14px;background:#ff3b30;color:#fff;font-size:8.5px;padding:2px 5px;border-radius:10px;font-weight:700;border:1px solid #444;white-space:nowrap">Help</span></div>
+<img src="scan.png" decoding="async" onerror="this.style.display='none'">
+<div style="position:relative" onclick="location.href='notification.html'"><img src="bell.png" decoding="async" onerror="this.style.display='none'"><span style="position:absolute;top:-7px;right:-8px;background:#ff3b30;color:#fff;font-size:9.5px;min-width:20px;height:15px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-weight:800;padding:0 4px" style="display:none">0</span></div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-top"><div class="card-top-left"><span style="display:flex;align-items:center;gap:6px">
+<svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 1.5 L3.2 5.4 V12.1 C3.2 16.5 5.8 20.2 12 23.2 C18.2 20.2 20.8 16.5 20.8 12.1 V5.4 L12 1.5Z" fill="#000000"/>
+  <path d="M8.5 12.3 L7.1 10.9 L8.3 9.7 L9.7 11.1 L14.9 5.9 L16.3 7.3 L9.7 14.3 Z" fill="none" stroke="#1dce9f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+Available Balance</span><img src="eye.png" id="eye" decoding="async"></div><span>Transaction History ›</span></div>
+<div class="card-bottom"><div class="balance" id="bal">—</div><div class="add">+ Add Money</div></div>
+<button class="hit eye-hit" id="eyeHit"></button>
+<a class="hit history-hit" href="history.html"></a>
+<a class="hit add-hit" href="addfunds.html"></a>
+</div>
+
+<div class="bonus" id="latestHistoryCard" style="display:none;">
+<div class="bonus-left">
+<img id="latestIcon" src="data-icon.png" decoding="async" onerror="this.src='data-icon.png'">
+<div><b id="latestName">--</b><p id="latestSub">--</p></div>
+</div>
+<div class="bonus-right"><b id="latestAmount">₦0.00</b><p id="latestStatus">Successful</p></div>
+</div>
+
+<div class="quick-box">
+<div class="quick">
+<div class="quick-item"><img src="to_lpay.png" decoding="async" onerror="this.style.display='none'"><p>To Opay</p></div>
+<div class="quick-item"><img src="to_bank.png" decoding="async" onerror="this.style.display='none'"><p>To Bank</p></div>
+<div class="quick-item"><img src="withdraw.png" decoding="async" onerror="this.style.display='none'"><p>Withdraw</p></div>
+</div>
+<a class="hit to-opay" href="bank.html"></a>
+<a class="hit to-bank" href="bank.html"></a>
+</div>
+
+<div class="email"><img src="email.png" loading="lazy" decoding="async" onerror="this.style.display='none'"><div><h4>Take Control, Stay Informed</h4><p>Add your email, get the latest from Opay</p></div></div>
+
+<div class="grid-box">
+<div class="grid">
+<div class="g"><span class="tag up">Up to 6%</span><img src="airtime.png" loading="lazy" decoding="async" onerror="this.style.display='none'"><p>Airtime</p></div>
+<div class="g"><img src="data.png" loading="lazy" decoding="async" onerror="this.style.display='none'"><p>Data</p></div>
+<div class="g"><img src="betting.png" loading="lazy" decoding="async" onerror="this.style.display='none'"><p>Betting</p></div>
+<div class="g"><img src="tv.png" loading="lazy" decoding="async" onerror="this.style.display='none'"><p>TV</p></div>
+<div class="g"><img src="wealth.png" loading="lazy" decoding="async" onerror="this.style.display='none'"><p>Owealth</p></div>
+<div class="g"><span class="tag hot">Hot</span><img src="loan.png" loading="lazy" decoding="async" onerror="this.style.display='none'"><p>Loan</p></div>
+<div class="g"><span class="tag me">ME600</span><img src="invitation.png" loading="lazy" decoding="async" onerror="this.style.display='none'"><p>Invitation</p></div>
+<div class="g"><img src="more.png" loading="lazy" decoding="async" onerror="this.style.display='none'"><p>More</p></div>
+</div>
+<a class="hit data-hit" href="data.html"></a>
+</div>
+
+<div class="promo"><div class="promo-head"><b>Spend ₦200, Pay ₦0!</b><img src="giftboxr.png" loading="lazy" decoding="async" onerror="this.style.display='none'"></div><div class="promo-inner"><div class="promo-left"><img src="airtime_free.png" loading="lazy" decoding="async" onerror="this.style.display='none'"><div><b>₦200 Airtime FREE</b><span>Cardholders only! ● Valid for 48 hours. Get it now!</span></div></div><button class="go">Claim</button></div></div>
+
+<div class="awoof"><img src="ball.png" loading="lazy" decoding="async" onerror="this.style.display='none'"><div><h4>Awoof Wey No Dey Run Belle!!!</h4><p>Get 10% Off when you deposit ₦300 only</p></div></div>
+
+<div class="sec"><img src="security.png" decoding="async" onerror="this.style.display='none'"><span>Click for Security</span></div>
+
+<div class="nav">
+<div class="nav-item active"><img src="home.png" decoding="async" onerror="this.style.display='none'"><span>Home</span></div>
+<div class="nav-item"><img src="rewards.png" decoding="async" onerror="this.style.display='none'"><span>Rewards</span></div>
+<div class="nav-item"><img src="finance.png" decoding="async" onerror="this.style.display='none'"><span>Finance</span></div>
+<div class="nav-item"><img src="cards.png" decoding="async" onerror="this.style.display='none'"><span>Cards</span></div>
+<div class="nav-item" id="meBtn"><img src="me.png" decoding="async" onerror="this.style.display='none'"><span>Me</span></div>
+</div>
+
+<script>
+(async()=>{
+ const $=id=>document.getElementById(id),ADMIN='gentesjop@gmail.com';let hidden=false,lastBalance=null;
+ // Never hold the dashboard on a loading label while Supabase responds.
+ $('bal').textContent='—';
+ const money=n=>'₦'+Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});
+ function showBalance(n){lastBalance=Number(n);$('bal').textContent=hidden?'**** ›':money(n)+' ›';}
+ function renderLatest(tx){
+   const card=$('latestHistoryCard');if(!tx){card.style.display='none';return;}
+   const m=tx.metadata||{},incoming=tx.type==='in',transfer=m.category==='transfer';
+   $('latestIcon').src=incoming?'funds.png':transfer?'transfertobank.png':'data-icon.png';
+   $('latestName').textContent=tx.title||tx.name||'Transaction';
+   $('latestSub').textContent=m.phone||m.bank||m.bundle||tx.date+' '+tx.time;
+   $('latestAmount').textContent=(incoming?'+ ':'- ')+money(tx.amount);
+   $('latestAmount').style.color=incoming?'#1dce9f':'#fff';
+   $('latestStatus').textContent=tx.status||'Successful';
+   card.style.display='flex';
+   // Incoming credits are informational only; only outgoing transactions open a receipt.
+   card.onclick=null;card.style.cursor=tx.type==='out'?'pointer':'default';
+   if(tx.type==='out')card.onclick=()=>{sessionStorage.setItem('lpaySelectedTransaction',JSON.stringify(tx));location.href=transfer?'transferinfo.html':'transaction.html';};
+ }
+ async function refreshDashboard(){
+   const results=await Promise.allSettled([LPayWallet.balance(),LPayWallet.transactions(1)]);
+   if(results[0].status==='fulfilled')showBalance(results[0].value);
+   else console.warn('Balance refresh:',results[0].reason);
+   if(results[1].status==='fulfilled')renderLatest(results[1].value[0]||null);
+   else console.warn('History preview refresh:',results[1].reason);
+ }
+ const toggle=e=>{e?.preventDefault();hidden=!hidden;if(lastBalance!==null)showBalance(lastBalance);else $('bal').textContent=hidden?'**** ›':'—';};
+ $('eye')?.addEventListener('click',toggle);$('eyeHit')?.addEventListener('click',toggle);$('bal')?.addEventListener('click',toggle);
+ try{
+   const user=await LPayWallet.sessionUser();
+   if(!user){location.replace('index.html');return;}
+   // Reuse this account's saved display text immediately; update it from the authenticated profile.
+   const fallbackName=(user.email?.split('@')[0]||'').trim();
+   const savedName=LPayWallet.cachedProfileText(user.id);
+   const profileName=(user.user_metadata?.full_name||user.user_metadata?.name||fallbackName||'').trim();
+   $('userNameDisplay').textContent='Hi, '+(savedName||profileName);
+   if(profileName){LPayWallet.saveProfileText(user.id,profileName);$('userNameDisplay').textContent='Hi, '+profileName;}
+   // Show this user's last confirmed balance and transaction preview immediately.
+   const cached=LPayWallet.cachedBalance(user.id);
+   if(cached!==null)showBalance(cached);else $('bal').textContent='—';
+   const cachedRows=LPayWallet.cachedTransactions(user.id,1);
+   if(cachedRows&&cachedRows.length)renderLatest(cachedRows[0]);
+   // Refresh current wallet and report quietly in the background.
+   refreshDashboard();
+   if(user.email?.toLowerCase()!==ADMIN){
+     const {data:sub,error}=await LPayWallet.client.from('subscriptions').select('active,expires_at').eq('user_id',user.id).maybeSingle();
+     if(error)throw error;
+     if(!sub?.active||!sub.expires_at||new Date(sub.expires_at)<=new Date()){
+       await LPayWallet.client.auth.signOut();location.replace('index.html');return;
+     }
+   }
+ }catch(e){if(lastBalance===null)$('bal').textContent='Unavailable';console.error(e);}
+ $('meBtn')?.addEventListener('click',async()=>{if(confirm('Logout?')){await LPayWallet.client.auth.signOut();location.replace('index.html');}});
+})();
+</script>
+</body>
+</html>

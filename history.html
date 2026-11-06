@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>History — LPay</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./lpay-wallet.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+html,body{margin:0;padding:0;width:100%;min-height:100%;background:#1b1b1b;color:#fff;overflow-x:hidden}
+.page{width:100%;min-height:100vh;background:#1b1b1b;padding-bottom:30px}
+.header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#1b1b1b;border-bottom:1px solid #333}
+.header-left{display:flex;align-items:center;gap:12px}
+.back{color:#fff;text-decoration:none;font-size:26px;line-height:1}
+.header-title{color:#fff;font-size:16px;font-weight:700}
+.download{color:#00d68f;font-size:13px;font-weight:700;text-decoration:none}
+.filters{display:flex;gap:10px;padding:12px;background:#1b1b1b}
+.filter{flex:1;height:44px;background:#1a1a1a;border-radius:10px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:#fff;font-size:13px;font-weight:600;border:1px solid #3a3a3a}
+.arrow{color:#888;font-size:14px}
+.month-card{margin:4px 12px 12px;background:#2c2c2c;border-radius:12px;overflow:hidden;border:1px solid #3a3a3a}
+.month-header{padding:16px 14px 0}
+.month-top{display:flex;align-items:center;justify-content:space-between}
+.month-name{color:#fff;font-size:16px;font-weight:700;white-space:nowrap}
+.month-arrow{color:#888;font-size:12px;margin-left:4px}
+.analysis{background:#00d68f;color:#1b1b1b;border-radius:20px;padding:8px 14px;font-size:11px;font-weight:800;white-space:nowrap}
+.month-totals{display:flex;align-items:center;gap:18px;margin-top:10px;padding-bottom:14px}
+.month-total{color:#8c8c8c;font-size:11px;font-weight:600;white-space:nowrap}
+.month-total span{color:#00d68f;font-weight:700}
+.month-total.out span{color:#ddd}
+.month-divider{height:1px;background:#3a3a3a;margin:0 14px}
+.history-item{width:100%;min-height:76px;display:flex;align-items:center;padding:12px 14px;border-bottom:1px solid #3a3a3a;cursor:pointer}
+.history-item:last-child{border-bottom:none}
+.icon-wrap{width:44px;height:44px;min-width:44px;display:flex;align-items:center;justify-content:center;background:transparent;flex-shrink:0}
+.data-icon{width:44px;height:44px;object-fit:contain;display:block}
+.info{min-width:0;flex:1;margin-left:10px;padding-right:8px}
+.name{color:#fff;font-size:13px;font-weight:600;line-height:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub-info{margin-top:2px;color:#999;font-size:11px;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.date{margin-top:1px;color:#777;font-size:10px;line-height:14px;white-space:nowrap}
+.right{flex:0 0 82px;width:82px;margin-left:auto;text-align:right;align-self:center}
+.amount{font-size:13px;font-weight:700;white-space:nowrap}
+.amount.out-money{color:#ddd}
+.amount.in-money{color:#00d68f}
+.status{margin-top:4px;color:#00d68f;font-size:9px;font-weight:500;white-space:nowrap}
+.empty{margin:12px;background:#2c2c2c;border-radius:12px;min-height:180px;display:flex;align-items:center;justify-content:center;color:#777;font-size:13px;border:1px solid #3a3a3a}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="header-left"><a href="dashboard.html" class="back">‹</a><div class="header-title">Transactions</div></div>
+    <a href="#" class="download" onclick="downloadHistory(event)">Download</a>
+  </div>
+  <div class="filters"><div class="filter"><span>All Categories</span><span class="arrow">▾</span></div><div class="filter"><span>All Status</span><span class="arrow">▾</span></div></div>
+  <div id="historyContainer"></div>
+</div>
+<script>
+const money=n=>Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});let rows=[];const box=document.getElementById('historyContainer');
+function downloadHistory(e){e.preventDefault();const t=rows.map((x,i)=>`${i+1}. ${x.title}
+${x.type==='in'?'+':'-'}₦${money(x.amount)}
+${x.date} ${x.time}
+Ref: ${x.reference}`).join('\n\n');const u=URL.createObjectURL(new Blob([t],{type:'text/plain'}));const a=document.createElement('a');a.href=u;a.download='lpay-history.txt';a.click();URL.revokeObjectURL(u);}
+function renderHistory(data){rows=Array.isArray(data)?data:[];box.innerHTML='';if(!rows.length){box.innerHTML='<div class="empty">No transactions yet</div>';return;}const groups=new Map();for(const x of rows){const d=new Date(x.timestamp),k=d.getFullYear()+'-'+d.getMonth();if(!groups.has(k))groups.set(k,{date:d,items:[],inc:0,out:0});const g=groups.get(k);g.items.push(x);if(x.type==='in')g.inc+=x.amount;else g.out+=x.amount;}for(const g of groups.values()){const card=document.createElement('div');card.className='month-card';const head=document.createElement('div');head.className='month-header';head.innerHTML=`<div class="month-top"><div class="month-name">${g.date.toLocaleDateString('en-US',{month:'short',year:'numeric'})}</div><div class="analysis">Analysis</div></div><div class="month-totals"><div class="month-total">In: <span>₦${money(g.inc)}</span></div><div class="month-total out">Out: <span>₦${money(g.out)}</span></div></div>`;card.append(head);const div=document.createElement('div');div.className='month-divider';card.append(div);for(const x of g.items){const m=x.metadata||{},incoming=x.type==='in',transfer=m.category==='transfer';const row=document.createElement('div');row.className='history-item';const icon=document.createElement('div');icon.className='icon-wrap';const img=document.createElement('img');img.className='data-icon';img.src=incoming?'funds.png':transfer?'transfertobank.png':'data-icon.png';icon.append(img);const info=document.createElement('div');info.className='info';const name=document.createElement('div');name.className='name';name.textContent=x.title;const sub=document.createElement('div');sub.className='sub-info';sub.textContent=m.phone||m.bank||m.bundle||x.reference;const date=document.createElement('div');date.className='date';date.textContent=x.date+' • '+x.time;info.append(name,sub,date);const right=document.createElement('div');right.className='right';const amt=document.createElement('div');amt.className='amount '+(incoming?'in-money':'out-money');amt.textContent=(incoming?'+':'-')+'₦'+money(x.amount);const status=document.createElement('div');status.className='status';status.textContent=x.status||'Successful';right.append(amt,status);row.append(icon,info,right);if(x.type==='out'){row.style.cursor='pointer';row.onclick=()=>{sessionStorage.setItem('lpaySelectedTransaction',JSON.stringify(x));location.href=transfer?'transferinfo.html':'transaction.html';};}else{row.style.cursor='default';row.setAttribute('aria-disabled','true');}card.append(row);}box.append(card);}}
+(async()=>{try{const user=await LPayWallet.sessionUser();if(!user){location.replace('index.html');return;}const cached=LPayWallet.cachedTransactions(user.id,1000);if(cached)renderHistory(cached);else box.innerHTML='<div class="empty">Getting your latest transactions…</div>';LPayWallet.transactions(1000).then(renderHistory).catch(e=>{if(!cached)box.innerHTML='<div class="empty">'+e.message+'</div>';});}catch(e){box.innerHTML='<div class="empty">'+e.message+'</div>';}})();
+</script></body></html>

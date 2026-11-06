@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Successful</title>
+<style>
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+html,body{margin:0;padding:0;background:#1b1b1b;color:white;min-height:100vh}
+.page{width:100%;max-width:430px;margin:0 auto;min-height:100vh;background:#1b1b1b;padding-bottom:20px}
+.top{padding:14px 14px 0 14px;display:flex;justify-content:flex-end}
+.top span{color:#00d68f;font-weight:700;font-size:14px;cursor:pointer}
+.success-wrap{text-align:center;padding:8px 14px 0 14px}
+.check-outer{width:56px;height:56px;margin:8px auto;display:flex;align-items:center;justify-content:center}
+.check-outer img{width:100%;height:100%;object-fit:contain;display:block}
+.s-title{margin-top:10px;font-size:15px;font-weight:600;color:#e8e8e8}
+.s-amount{margin-top:14px;font-size:28px;font-weight:800}
+.bonus-bar{margin:16px 12px 0 12px;background:#2c2c2c;border-radius:12px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.bonus-bar span:last-child{color:#00d68f;font-weight:600}
+.actions{margin:12px 12px 0 12px;display:flex;gap:10px}
+.action{flex:1;background:#2c2c2c;border-radius:12px;padding:12px 4px;text-align:center;cursor:pointer}
+.ico{width:34px;height:34px;margin:0 auto;display:flex;align-items:center;justify-content:center}
+.ico img{width:100%;height:100%;object-fit:contain;display:block}
+.action p{margin:7px 0 0 0;font-size:11px;color:#ccc;font-weight:500}
+.special{background:#2c2c2c;margin:14px 12px;border-radius:14px;padding:12px 14px}
+.special-title{font-size:13px;font-weight:700;margin-bottom:8px}
+.bonus-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #333}
+.bonus-item:last-child{border:none}
+.b-icon{width:38px;height:38px;background:white;border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.b-icon img{width:100%;height:100%;object-fit:cover}
+.b-text{flex:1}
+.b-text b{font-size:12.5px;display:block;font-weight:600}
+.b-text span{font-size:10.5px;color:#999;display:block;margin-top:2px}
+.go{padding:6px 16px;background:#00d68f;color:#000;border:none;border-radius:18px;font-size:11px;font-weight:800;min-width:46px}
+.claim-banner{margin:16px 12px 0 12px;border-radius:12px;overflow:hidden;background:#fff}
+.claim-banner img{width:100%;display:block;border-radius:12px;height:74px;object-fit:cover}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top"><span id="doneButton">Done</span></div>
+  <div class="success-wrap">
+    <div class="check-outer"><img src="success_check.png"></div>
+    <div class="s-title">Successful</div>
+    <div class="s-amount" id="amount">₦0.00</div>
+  </div>
+  <div class="bonus-bar"><span>OPay Bonus</span><span id="cashback">+₦30.00 Cashback ></span></div>
+  <div class="actions">
+    <div class="action"><div class="ico"><img src="share.png"></div><p>Share Receipt</p></div>
+    <div class="action" onclick="location.href='addfunds.html'"><div class="ico"><img src="add_money.png"></div><p>Add Money</p></div>
+    <div class="action" onclick="location.href='transferinfo.html'"><div class="ico"><img src="details.png"></div><p>View Details</p></div>
+  </div>
+  <div class="special">
+    <div class="special-title">Special Bonus For You</div>
+    <div class="bonus-item"><div class="b-icon"><img src="datar.png" alt=""></div><div class="b-text"><b>Data offers at lowes</b><span>Recharge Data & Earn Now!</span></div><button class="go">GO</button></div>
+    <div class="bonus-item"><div class="b-icon"><img src="savings.png" alt=""></div><div class="b-text"><b>Don't Miss Out</b><span>Balance with Daily Interest</span></div><button class="go">GO</button></div>
+    <div class="bonus-item"><div class="b-icon"><img src="electric.png" alt=""></div><div class="b-text"><b>Electricity Payment</b><span>Fast&Easy Electricity Bill Pay</span></div><button class="go">GO</button></div>
+    <div class="bonus-item"><div class="b-icon"><img src="tvr.png" alt=""></div><div class="b-text"><b>TV Payment</b><span>Reconnect cable TV instantly!</span></div><button class="go">GO</button></div>
+  </div>
+
+  <div class="claim-banner">
+    <img src="claim.png" alt="Claim 8 Discounts">
+  </div>
+
+</div>
+<script>
+let current={};try{current=JSON.parse(sessionStorage.getItem('lpayReceipt')||'{}')}catch(e){}const display=current.amountText||('₦'+Number(current.amount||0).toLocaleString('en-NG',{minimumFractionDigits:2}));document.getElementById('amount').textContent=display;document.getElementById('cashback').textContent=(current.cashback||'+₦0.00 Cashback')+' >';document.getElementById('doneButton').addEventListener('click',()=>location.href='dashboard.html');
+</script></body></html>

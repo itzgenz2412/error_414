@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Data Plan</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./lpay-wallet.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:Inter,-apple-system,BlinkMacSystemFont,SF Pro Text,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+html,body{margin:0;padding:0;width:100%;min-height:100%;background:#0a0a0a;color:#fff}
+.page{width:100%;max-width:480px;margin:0 auto;min-height:100vh;background:#0a0a0a;display:flex;flex-direction:column}
+.top-card{background:#1e1e1e;margin:12px;border-radius:14px;padding:8px 16px;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1.2px solid #2a2a2a}
+.row:last-child{border:none}
+.label{font-size:13.5px;color:#8a8a8a;font-weight:500;letter-spacing:.2px}
+.value{font-size:13.5px;font-weight:700;color:#fff;letter-spacing:.2px}
+.right{font-size:13px;color:#6a6a6a;font-weight:500}
+.cashback{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1.2px solid #2a2a2a}
+.cash-left{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600}
+.check{width:20px;height:20px;background:#1ac37e;border-radius:5px;color:#000;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:12px}
+.cash-right{color:#1ac37e;font-size:13px;font-weight:700}
+.mid-card{background:#1e1e1e;margin:0 12px;border-radius:14px;padding:12px 16px;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+.head{font-size:14px;font-weight:800;padding:10px 0;display:flex;justify-content:space-between;letter-spacing:.2px}
+.all{color:#777;font-size:12.5px;font-weight:500}
+.item{display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1.2px solid #2a2a2a}
+.item.clickable{cursor:pointer}
+.icon{width:38px;height:38px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.icon img{width:75%;height:75%;object-fit:contain}
+.icon-dark{background:#2c2c2c}
+.name{font-size:13.5px;font-weight:700;letter-spacing:.1px}
+.sub{font-size:11px;color:#8a8a8a;margin-top:3px;font-weight:500}
+.add{margin-left:auto;color:#1ac37e;font-size:12px;font-weight:700;cursor:pointer}
+.pay-wrap{margin-top:auto;padding:18px 14px 22px;background:#141414;position:sticky;bottom:0;border-top:1px solid #1e1e1e}
+.pay{width:100%;height:54px;border:0;border-radius:30px;background:#20c997;color:#000;font-size:16px;font-weight:900;letter-spacing:.3px;box-shadow:0 4px 12px rgba(32,201,151,.3)}
+.pay:disabled{background:#3a3a3a!important;color:#7a7a7a!important;box-shadow:none!important;cursor:not-allowed}
+.pay:active:not(:disabled){transform:scale(.98)}
+</style>
+</head>
+
+  <body>
+<div class="page">
+  <div class="top-card">
+    <div class="row"><div class="label">Product Name</div><div class="value">Mobile Data</div></div>
+    <div class="row"><div class="label">Recipient Mobile</div><div class="value" id="recipient">--</div></div>
+    <div class="row"><div class="label">Data Bundle</div><div class="value" id="bundle">--</div></div>
+    <div class="row"><div class="label">Amount</div><div class="value" id="amount">--</div></div>
+    <div class="row"><div class="label">Voucher</div><div class="right">None available ›</div></div>
+    <div class="cashback"><div class="cash-left"><div class="check">✓</div>Use Cashback (<span id="cb1">₦0.00</span>)</div><div class="cash-right" id="cb2">-₦0.00</div></div>
+    <div class="row"><div class="label">OPay Bonus</div><div class="right">₦0.00</div></div>
+  </div>
+
+  <div class="mid-card">
+    <div class="head"><span>Payment Method</span><span class="all">All ›</span></div>
+
+    <!-- WALLET ROW - WITH INSUFFICIENT STYLE -->
+    <div class="item clickable" onclick="window.top.location.href='addfunds.html'" style="flex-direction:column;align-items:flex-start;">
+      <div style="display:flex;align-items:center;gap:12px;width:100%">
+        <div class="icon">
+          <img src="https://gstatic.opayweb.com/website-ng/img/opay-logo.684aa98.svg" alt="OPay">
+        </div>
+        <div class="name">Available Balance (<span id="available">₦0.00</span>)</div>
+        <div class="add">Add Money ›</div>
+      </div>
+      <div id="insufficientMsg" style="display:none;color:#ff3b30;font-size:11.5px;font-weight:500;margin-left:50px;margin-top:6px;">Insufficient balance</div>
+    </div>
+
+    <div class="item"><div class="icon icon-dark" style="font-size:16px">💰</div><div class="name">OWealth (₦0.00) ⓘ</div></div>
+    <div class="item"><div class="icon icon-dark" style="font-size:18px;color:#fff">+</div><div class="name">Add a Bank Card / Account</div></div>
+  </div>
+
+  <div class="pay-wrap"><button class="pay" id="payButton">Pay <span id="payAmount">₦0</span></button></div>
+</div>
+
+<script>
+const plans={plan1:{b:'1GB - 1 Day',a:500,c:17.5},plan2:{b:'2.5GB - 1 Day',a:750,c:15},plan3:{b:'2.5GB - 2 Days',a:900,c:18},plan4:{b:'500MB - 7 Days',a:500,c:17.5},plan5:{b:'1GB - 7 Days',a:800,c:16},plan6:{b:'3.5GB - 7 Days',a:1490,c:30},plan7:{b:'2GB - 30 Days',a:1490,c:30},plan8:{b:'7GB - 30 Days',a:3460,c:70}};
+const $=id=>document.getElementById(id),phone=localStorage.getItem('dataPhoneNumber')||'',sel=localStorage.getItem('selectedDataPlan')||'plan1',pl=plans[sel]||plans.plan1,fmt=n=>'₦'+Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2});$('recipient').textContent=phone.replace(/(\d{4})(\d{3})(\d{4})/,'$1 $2 $3');$('bundle').textContent=pl.b;$('amount').textContent=fmt(pl.a);$('payAmount').textContent=fmt(pl.a);$('cb1').textContent=fmt(pl.c);$('cb2').textContent='-'+fmt(pl.c);const btn=$('payButton'),msg=$('insufficientMsg');let balance=0,busy=false;
+async function load(){try{balance=await LPayWallet.balance();$('available').textContent=fmt(balance);btn.disabled=pl.a>balance;msg.style.display=pl.a>balance?'block':'none';}catch(e){btn.disabled=true;msg.textContent=e.message;msg.style.display='block';}}
+$('payButton').addEventListener('click',async()=>{if(busy||pl.a>balance)return;busy=true;btn.disabled=true;btn.textContent='Processing…';try{const {data,error}=await LPayWallet.client.rpc('lpay_debit_wallet',{p_amount:pl.a,p_title:'Mobile data purchase',p_metadata:{category:'data',phone,bundle:pl.b,plan_id:sel,cashback:pl.c}});if(error)throw error;const now=new Date(),tx={id:data.reference,reference:data.reference,type:'out',name:'Mobile Data',title:'Mobile data purchase',phone,bundle:pl.b,amount:pl.a,cashback:'+₦'+pl.c.toFixed(2)+' Cashback',date:now.toLocaleDateString('en-GB'),time:now.toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'}),timestamp:Date.now(),status:'Successful',metadata:{category:'data',phone,bundle:pl.b}};sessionStorage.setItem('lpayReceipt',JSON.stringify(tx));location.href='print.html';}catch(e){msg.textContent=e.message;msg.style.display='block';busy=false;btn.disabled=false;btn.textContent='Pay '+fmt(pl.a);}});load();
+</script></body></html>
