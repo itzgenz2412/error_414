@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#111111">
+<title>Desphish | Admin Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./lpay-wallet.js"></script>
+<style>
+:root{--bg:#111112;--panel:#1b1b1e;--panel2:#222226;--line:#303036;--muted:#96969f;--green:#1dce9f;--green2:#a0f0d7;--red:#ff7777;--amber:#f4c56a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:#fff;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+body{padding:18px;display:flex;justify-content:center}
+.shell{width:100%;max-width:1120px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:4px 0 20px}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:46px;height:46px;border-radius:15px;object-fit:contain;display:block;flex-shrink:0}
+.eyebrow{font-size:10px;letter-spacing:1.7px;color:var(--green);font-weight:800}
+.title{font-size:23px;font-weight:850;margin-top:3px}
+.top-actions{display:flex;gap:8px}
+.btn,.smallbtn{border:1px solid var(--line);background:var(--panel2);color:#fff;border-radius:11px;padding:11px 14px;font-weight:750;cursor:pointer}
+.btn.primary{background:var(--green);color:#071a13;border-color:var(--green)}
+.btn:disabled,.smallbtn:disabled{opacity:.45;cursor:not-allowed}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.stat{background:linear-gradient(145deg,#202024,#19191c);border:1px solid var(--line);border-radius:17px;padding:16px}
+.stat-label{font-size:11px;color:var(--muted);font-weight:700}
+.stat-value{font-size:26px;font-weight:850;margin-top:9px;letter-spacing:-.6px}
+.stat-note{font-size:10px;color:#777;margin-top:4px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:14px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.panel-title{font-size:15px;font-weight:850}
+.muted{font-size:11px;color:var(--muted);line-height:1.5}
+.filters{display:grid;grid-template-columns:minmax(150px,1fr) 150px 150px auto;gap:8px;margin-bottom:12px}
+.field{width:100%;min-width:0;height:43px;border-radius:10px;border:1px solid #393940;background:#121214;color:#fff;padding:0 11px;font-size:12px;outline:none}
+.field:focus{border-color:var(--green)}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px}
+table{border-collapse:collapse;width:100%;min-width:670px}
+th{text-align:left;font-size:10px;color:#92929a;font-weight:800;letter-spacing:.7px;background:#17171a;padding:12px 11px;white-space:nowrap}
+td{padding:12px 11px;border-top:1px solid #2b2b30;font-size:11px;white-space:nowrap}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#242429}
+tbody tr.selected{background:#173128}
+.email{font-weight:750;color:#f3f3f3}
+.subline{font-size:10px;color:#8b8b93;margin-top:4px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:99px;font-size:10px;font-weight:800}
+.pill.active{background:#143a2d;color:#79e2b8}
+.pill.expired{background:#3a2d16;color:#f4c56a}
+.pill.inactive{background:#303035;color:#b5b5bd}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+.pager-actions{display:flex;gap:7px}
+.empty{padding:30px 12px;text-align:center;color:var(--muted);font-size:12px}
+.side{position:sticky;top:12px}
+.selected-card{background:#151518;border:1px solid var(--line);border-radius:13px;padding:13px;margin:12px 0}
+.selected-email{font-size:12px;font-weight:800;word-break:break-word}
+.selected-balance{font-size:21px;font-weight:850;color:var(--green);margin-top:8px}
+.label{display:block;color:var(--green2);font-size:10px;letter-spacing:.8px;font-weight:850;margin:13px 0 6px}
+.action-btn{width:100%;height:44px;border:0;border-radius:10px;background:var(--green);color:#071a13;font-weight:850;margin-top:12px;cursor:pointer}
+.msg{font-size:11px;line-height:1.5;min-height:17px;margin-top:10px;color:var(--red);overflow-wrap:anywhere}
+.msg.ok{color:var(--green2)}
+.note{font-size:10px;color:#777;line-height:1.55;margin-top:13px}
+.divider{height:1px;background:var(--line);margin:15px 0}
+.loading{opacity:.7}
+.mobile-count{display:none}
+@media(max-width:850px){
+.layout{grid-template-columns:1fr}
+.side{position:static}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.filters{grid-template-columns:1fr 1fr}
+.filters .search{grid-column:1/-1}
+.filters .btn{grid-column:1/-1}
+.top{align-items:flex-start}
+.title{font-size:20px}
+}
+@media(max-width:420px){
+body{padding:11px}
+.panel{padding:12px}
+.stat{padding:13px}
+.stat-value{font-size:23px}
+.top-actions .btn{padding:10px}
+.brand{gap:9px}
+.mark{width:40px;height:40px}
+.title{font-size:18px}
+}
+</style>
+</head>
+
+<body>
+<main class="shell" id="app">
+
+<header class="top">
+  <div class="brand">
+    <img class="mark" src="./desphish.png" alt="Desphish">
+    <div>
+      <div class="eyebrow">DESPHISH CONTROL CENTER</div>
+      <div class="title">Admin dashboard</div>
+    </div>
+  </div>
+
+  <div class="top-actions">
+    <button class="btn" id="exportBtn">Export CSV</button>
+    <button class="btn primary" id="refreshBtn">↻ Refresh</button>
+  </div>
+</header>
+
+<section class="stats">
+  <div class="stat">
+    <div class="stat-label">TOTAL REGISTERED USERS</div>
+    <div class="stat-value" id="totalUsers">—</div>
+    <div class="stat-note">All Supabase Auth accounts</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-label">ACTIVE SUBSCRIBERS</div>
+    <div class="stat-value" id="activeSubs">—</div>
+    <div class="stat-note">Verified and not expired</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-label">EXPIRED SUBSCRIPTIONS</div>
+    <div class="stat-value" id="expiredSubs">—</div>
+    <div class="stat-note">Previously subscribed / expired</div>
+  </div>
+
+  <div class="stat">
+    <div class="stat-label">NOT CURRENTLY ACTIVE</div>
+    <div class="stat-value" id="notActive">—</div>
+    <div class="stat-note">No active access at this time</div>
+  </div>
+</section>
+
+<section class="layout">
+  <section class="panel">
+
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">User directory</div>
+        <div class="muted" id="resultCount">Search, sort and filter registered accounts.</div>
+      </div>
+      <span class="mobile-count" id="mobileCount"></span>
+    </div>
+
+    <div class="filters">
+      <input class="field search" id="search" type="search" placeholder="Search by email address…" autocomplete="off">
+
+      <select class="field" id="status">
+        <option value="all">All users</option>
+        <option value="active">Active subscribers</option>
+        <option value="expired">Expired subscribers</option>
+        <option value="inactive">Not subscribed</option>
+      </select>
+
+      <select class="field" id="sort">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="last_seen">Recently active</option>
+        <option value="email_asc">Email A–Z</option>
+        <option value="email_desc">Email Z–A</option>
+        <option value="subscription">Subscribers first</option>
+      </select>
+
+      <button class="btn primary" id="searchBtn">Apply</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>USER / EMAIL</th>
+            <th>WALLET</th>
+            <th>SUBSCRIPTION</th>
+            <th>JOINED</th>
+            <th>LAST SEEN</th>
+          </tr>
+        </thead>
+        <tbody id="userRows">
+          <tr><td colspan="5" class="empty">Loading admin data…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      <div class="muted" id="pageLabel">Page 1</div>
+      <div class="pager-actions">
+        <button class="smallbtn" id="prevBtn" disabled>← Previous</button>
+        <button class="smallbtn" id="nextBtn" disabled>Next →</button>
+      </div>
+    </div>
+
+  </section>
+
+  <aside class="panel side">
+
+    <div class="panel-title">Account management</div>
+
+    <div class="muted">
+      Select a user from the directory to manage their wallet.
+      Your existing credit, debit, set-balance and reset-history actions are retained.
+    </div>
+
+    <div class="selected-card" id="selectedCard">
+      <div class="muted">No user selected</div>
+      <div class="subline">Tap a user row to view account details and actions.</div>
+    </div>
+
+    <label class="label" for="action">WALLET ACTION</label>
+
+    <select class="field" id="action">
+      <option value="credit">Add funds to wallet</option>
+      <option value="debit">Remove funds from wallet</option>
+      <option value="set">Set exact balance</option>
+      <option value="reset">Reset wallet + clear transaction history</option>
+    </select>
+
+    <label class="label" id="amountLabel" for="amount">AMOUNT (₦)</label>
+
+    <input class="field" id="amount" type="number" inputmode="numeric" min="0" step="1" value="5000">
+
+    <button class="action-btn" id="applyBtn" disabled>Apply admin action</button>
+
+    <div class="msg" id="actionMsg"></div>
+
+    <div class="divider"></div>
+
+    <div class="muted">
+      Subscription payments are verified by Paystack and recorded in Supabase.
+      This panel displays subscription status; it does not expose payment secrets
+      or allow client-side subscription verification.
+    </div>
+
+    <div class="note">
+      Admin authorization is enforced by the Edge Function for
+      <b>gentesjop@gmail.com</b>. Opening this page alone does not grant access.
+      Wallet resets preserve the user's login and subscription.
+    </div>
+
+  </aside>
+</section>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const money = value => '₦' + Number(value || 0).toLocaleString('en-NG');
+  const date = value => value ? new Date(value).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const dateTime = value => value ? new Date(value).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : 'Never';
+
+  let page = 1, pageSize = 50, totalPages = 1, users = [], selected = null, busy = false;
+
+  function setMessage(message, ok=false) {
+    $('actionMsg').textContent=message||'';
+    $('actionMsg').className='msg'+(ok?' ok':'');
+  }
+
+  function statusPill(status) {
+    const label = status === 'active' ? 'Active' : status === 'expired' ? 'Expired' : 'Not subscribed';
+    return '<span class="pill '+status+'">'+label+'</span>';
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[ch]));
+  }
+
+  async function guard() {
+    const u = await LPayWallet.user();
+    if ((u.email || '').toLowerCase() !== 'gentesjop@gmail.com') {
+      throw new Error('Administrator access required.');
+    }
+    return u;
+  }
+
+  async function loadDashboard() {
+    if (busy) return;
+
+    busy = true;
+    $('refreshBtn').disabled = true;
+    $('refreshBtn').textContent = 'Loading…';
+    $('userRows').classList.add('loading');
+
+    try {
+      await guard();
+
+      const result = await LPayWallet.invoke('admin-wallet', {
+        action:'dashboard',
+        search:$('search').value.trim(),
+        status:$('status').value,
+        sort:$('sort').value,
+        page,
+        page_size:pageSize
+      });
+
+      const stats = result.stats || {};
+
+      $('totalUsers').textContent = Number(stats.total_users || 0).toLocaleString('en-NG');
+      $('activeSubs').textContent = Number(stats.active_subscribers || 0).toLocaleString('en-NG');
+      $('expiredSubs').textContent = Number(stats.expired_subscribers || 0).toLocaleString('en-NG');
+      $('notActive').textContent = Number(stats.not_active || 0).toLocaleString('en-NG');
+
+      users = Array.isArray(result.users) ? result.users : [];
+
+      totalPages = Math.max(1, Math.ceil(Number(result.filtered_count ?? stats.filtered_count ?? result.total_filtered ?? 0) / pageSize));
+
+      $('pageLabel').textContent = 'Page ' + page;
+      $('prevBtn').disabled = page <= 1;
+      $('nextBtn').disabled = !result.has_more;
+
+      $('resultCount').textContent =
+        users.length + ' accounts shown · ' +
+        Number(stats.total_users || 0).toLocaleString('en-NG') +
+        ' total registered';
+
+      $('mobileCount').textContent = users.length;
+
+      renderRows();
+
+    } catch (error) {
+
+      $('userRows').innerHTML =
+        '<tr><td colspan="5" class="empty">' +
+        escapeHtml(error.message || 'Unable to load admin dashboard.') +
+        '</td></tr>';
+
+      if ((error.message || '').toLowerCase().includes('administrator')) {
+        $('app').innerHTML =
+          '<section class="panel"><h2>Access denied</h2>' +
+          '<p class="muted">This page is restricted to the authorized Desphish administrator.</p></section>';
+      }
+
+    } finally {
+
+      busy = false;
+      $('refreshBtn').disabled = false;
+      $('refreshBtn').textContent = '↻ Refresh';
+      $('userRows').classList.remove('loading');
+
+    }
+  }
+
+  function renderRows() {
+
+    if (!users.length) {
+      $('userRows').innerHTML =
+        '<tr><td colspan="5" class="empty">No accounts match this search or filter.</td></tr>';
+      return;
+    }
+
+    $('userRows').innerHTML = users.map(u => {
+
+      const active = selected && selected.user_id === u.user_id;
+
+      return '<tr data-id="'+escapeHtml(u.user_id)+'" class="'+(active?'selected':'')+'">'+
+        '<td><div class="email">'+escapeHtml(u.email || '(no email)')+'</div>'+
+        '<div class="subline">'+escapeHtml(String(u.user_id).slice(0,8))+'…</div></td>'+
+        '<td><b>'+money(u.wallet_balance)+'</b></td>'+
+        '<td>'+statusPill(u.subscription_status)+'</td>'+
+        '<td>'+date(u.created_at)+'</td>'+
+        '<td>'+dateTime(u.last_sign_in_at)+'</td></tr>';
+
+    }).join('');
+
+    $('userRows').querySelectorAll('tr[data-id]').forEach(row => {
+
+      row.addEventListener('click', () => {
+
+        selected = users.find(u => u.user_id === row.dataset.id) || null;
+
+        renderRows();
+        renderSelected();
+        setMessage('');
+
+      });
+
+    });
+
+  }
+
+  function renderSelected() {
+
+    if (!selected) {
+
+      $('selectedCard').innerHTML =
+        '<div class="muted">No user selected</div>' +
+        '<div class="subline">Tap a user row to view account details and actions.</div>';
+
+      $('applyBtn').disabled = true;
+      return;
+
+    }
+
+    $('selectedCard').innerHTML =
+      '<div class="selected-email">'+escapeHtml(selected.email || '(no email)')+'</div>'+
+      '<div class="selected-balance">'+money(selected.wallet_balance)+'</div>'+
+      '<div class="subline">Wallet balance · '+statusPill(selected.subscription_status)+'</div>'+
+      '<div class="subline">Joined '+date(selected.created_at)+'</div>'+
+      '<div class="subline">Subscription expiry: '+dateTime(selected.expires_at)+'</div>'+
+      '<div class="subline">Last payment: '+dateTime(selected.last_payment_at)+'</div>';
+
+    $('applyBtn').disabled = false;
+
+  }
+
+  $('action').addEventListener('change', () => {
+
+    const reset = $('action').value === 'reset';
+
+    $('amountLabel').textContent =
+      reset ? 'NEW BALANCE AFTER RESET (₦)' : 'AMOUNT (₦)';
+
+    $('amount').value = '5000';
+
+  });
+
+  $('searchBtn').addEventListener('click', () => {
+    page=1;
+    loadDashboard();
+  });
+
+  $('search').addEventListener('keydown', e => {
+    if(e.key==='Enter'){
+      page=1;
+      loadDashboard();
+    }
+  });
+
+  $('status').addEventListener('change', () => {
+    page=1;
+    loadDashboard();
+  });
+
+  $('sort').addEventListener('change', () => {
+    page=1;
+    loadDashboard();
+  });
+
+  $('refreshBtn').addEventListener('click', loadDashboard);
+
+  $('prevBtn').addEventListener('click', () => {
+    if(page>1){
+      page--;
+      loadDashboard();
+    }
+  });
+
+  $('nextBtn').addEventListener('click', () => {
+    if(users.length===pageSize){
+      page++;
+      loadDashboard();
+    }
+  });
+
+  $('applyBtn').addEventListener('click', async () => {
+
+    if (!selected || busy) return;
+
+    const action = $('action').value;
+    const amount = Number($('amount').value);
+
+    if (!Number.isSafeInteger(amount) || amount < 0 || (action !== 'set' && amount === 0)) {
+      setMessage('Enter a valid whole-naira amount.');
+      return;
+    }
+
+    if (action === 'reset' && !confirm(
+      'This clears the selected user’s wallet transaction history and resets the wallet balance. The login and subscription will remain. Continue?'
+    )) return;
+
+    $('applyBtn').disabled=true;
+    setMessage('Processing securely…');
+
+    try {
+
+      const result = await LPayWallet.invoke('admin-wallet', {
+        action,
+        user_id:selected.user_id,
+        amount,
+        balance:amount
+      });
+
+      selected.wallet_balance = Number(result.balance);
+
+      setMessage(
+        'Updated '+result.email+'. New balance: '+
+        money(result.balance)+
+        (result.transactions_cleared?' · wallet history cleared':''),
+        true
+      );
+
+      renderSelected();
+      renderRows();
+
+      await loadDashboard();
+
+      selected = users.find(u => u.user_id === result.user_id) || selected;
+
+      renderSelected();
+      renderRows();
+
+    } catch (error) {
+
+      setMessage(error.message || 'Admin action failed.');
+
+    } finally {
+
+      $('applyBtn').disabled = !selected;
+
+    }
+
+  });
+
+  $('exportBtn').addEventListener('click', () => {
+
+    if (!users.length) {
+      setMessage('There are no visible rows to export.');
+      return;
+    }
+
+    const columns = [
+      'email','user_id','wallet_balance','subscription_status',
+      'created_at','last_sign_in_at','expires_at','last_payment_at'
+    ];
+
+    const csv = [
+      columns.join(','),
+      ...users.map(u =>
+        columns.map(k =>
+          '"'+String(u[k]??'').replace(/"/g,'""')+'"'
+        ).join(',')
+      )
+    ].join('\r\n');
+
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'desphish-users-page-'+page+'.csv';
+    a.click();
+
+    URL.revokeObjectURL(url);
+
+  });
+
+  guard().then(loadDashboard).catch(error => {
+
+    $('app').innerHTML =
+      '<section class="panel"><h2>Access denied</h2><p class="muted">'+
+      escapeHtml(error.message || 'Administrator access required.')+
+      '</p></section>';
+
+  });
+
+})();
+</script>
+</body>
+</html>

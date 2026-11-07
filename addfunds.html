@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Add Funds — LPay</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./lpay-wallet.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;width:100%;min-height:100%;background:#171719;font-family:Arial,Roboto,sans-serif;color:#fff}
+body{display:flex;justify-content:center}.page{width:100%;max-width:700px;min-height:100vh;padding:0 20px}
+.header{height:70px;display:flex;align-items:center;position:relative}.back{width:42px;height:42px;border:0;background:#242426;border-radius:50%;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;cursor:pointer}.title{position:absolute;left:50%;transform:translateX(-50%);font-size:20px;font-weight:700;white-space:nowrap}
+.card{margin-top:25px;background:#222224;border-radius:18px;padding:25px 20px 28px}.balance-label{font-size:14px;color:#a9a9ad;margin-bottom:8px}.balance{font-size:28px;font-weight:700;color:#6ed5a1;margin-bottom:28px}.label{display:block;font-size:15px;font-weight:600;margin-bottom:9px}.input{width:100%;height:56px;border:1px solid #3b3b3f;outline:none;border-radius:12px;background:#18181a;color:#fff;padding:0 16px;font-size:17px}.input:focus{border-color:#6ed5a1}.input::placeholder{color:#77777c}.amount-box{position:relative;margin-bottom:22px}.currency{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:#bdbdc1;pointer-events:none}.amount-input{padding-left:42px;cursor:not-allowed}.pin-box{margin-bottom:10px}.pin-input{letter-spacing:8px;text-align:left;font-size:20px}.error{min-height:20px;color:#ff6b6b;font-size:13px;margin-bottom:12px}.add-button{width:100%;height:56px;border:0;border-radius:12px;background:#6ed5a1;color:#101813;font-size:17px;font-weight:700;cursor:pointer}.add-button:active{transform:scale(.98)}.info{margin-top:18px;text-align:center;color:#77777c;font-size:12px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="header"><button class="back" onclick="goBack()" aria-label="Back">‹</button><div class="title">Add Funds</div></div>
+<div class="card">
+<div class="balance-label">Available Balance</div>
+<div class="balance" id="currentBalance">—</div>
+<label class="label" for="amount">Wallet amount you want</label>
+<div class="amount-box"><span class="currency">₦</span><input class="input amount-input" id="amount" type="number" inputmode="numeric" min="5000" max="50000" step="1" placeholder="Enter ₦5,000 – ₦50,000" style="cursor:text"></div>
+<div style="background:#18181a;border:1px solid #38383b;border-radius:12px;padding:14px;margin:0 0 18px"><div style="display:flex;justify-content:space-between;color:#aaa;font-size:13px"><span>Wallet credit</span><b id="creditView" style="color:#fff">₦0.00</b></div><div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid #333;font-size:14px"><span>You pay</span><b id="payView" style="font-size:20px;color:#6ed5a1">₦0.00</b></div></div>
+<div class="error" id="error"></div><button class="add-button" id="addButton">Continue to Paystack</button><div class="info">₦500 payment adds ₦5,000 wallet credit. Minimum ₦5,000 · Maximum ₦50,000. Your wallet is credited only after server verification.</div>
+</div></div>
+<script>
+(()=>{const $=id=>document.getElementById(id),input=$('amount'),btn=$('addButton');let busy=false;const fmt=n=>'₦'+Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});
+function calc(){const raw=input.value.trim(),n=Number(raw),ok=raw!==''&&Number.isSafeInteger(n)&&n>=5000&&n<=50000;$('creditView').textContent=fmt(ok?n:0);$('payView').textContent=fmt(ok?n/10:0);btn.disabled=!ok||busy;$('error').textContent=raw&&!ok?'Enter a whole-naira amount between ₦5,000 and ₦50,000.':'';}
+input.addEventListener('input',calc);async function init(){try{const user=await LPayWallet.sessionUser();if(!user)return;const cached=LPayWallet.cachedBalance(user.id);if(cached!==null)$('currentBalance').textContent=fmt(cached);LPayWallet.balance().then(n=>{$('currentBalance').textContent=fmt(n);}).catch(e=>{if(cached===null)$('currentBalance').textContent='—';console.warn('Balance refresh:',e);});}catch(e){$('currentBalance').textContent='—';console.warn('Balance session:',e);}}
+async function verify(){const q=new URLSearchParams(location.search),ref=q.get('reference')||q.get('trxref');if(q.get('topup')!=='1'||!ref)return;busy=true;btn.disabled=true;btn.textContent='Verifying payment…';try{const r=await LPayWallet.invoke('wallet-topup',{action:'verify',reference:ref});$('currentBalance').textContent=fmt(r.balance);$('error').style.color='#6ed5a1';$('error').textContent='Payment successful. Your wallet has been credited.';history.replaceState({},'',location.pathname);}catch(e){$('error').textContent=e.message+' Reference: '+ref;}finally{busy=false;btn.textContent='Continue to Paystack';calc();}}
+btn.addEventListener('click',async()=>{const n=Number(input.value);if(busy||!Number.isSafeInteger(n)||n<5000||n>50000)return;busy=true;btn.disabled=true;btn.textContent='Preparing payment…';$('error').textContent='';try{const r=await LPayWallet.invoke('wallet-topup',{action:'initialize',credit_amount:n});location.assign(r.authorization_url);}catch(e){$('error').textContent=e.message;busy=false;btn.textContent='Continue to Paystack';calc();}});
+init().then(verify);})();function goBack(){history.back();}
+</script></body></html>

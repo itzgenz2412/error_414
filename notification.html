@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Notifications</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:rgba(0,0,0,0) !important;outline:none !important}
+  html,body{background:#1b1b1b}
+  body{font-family:-apple-system,sans-serif;color:#fff;user-select:none}
+  .header{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#1b1b1b;position:sticky;top:0;z-index:10}
+  .back{font-size:28px;padding-right:10px;cursor:pointer}
+  .header b{font-size:17px;font-weight:600}
+  .dots{margin-left:auto;letter-spacing:3px;color:#888}
+  .enable{background:#2c2c2c;margin:8px 16px;padding:12px 16px;border-radius:24px;display:flex;justify-content:space-between;align-items:center}
+  .enable span{font-size:13px;color:#00d09c}
+  .enable .btn{background:#00d09c;color:#000;padding:6px 14px;border-radius:18px;font-size:13px;font-weight:700}
+  .tabs{display:flex;gap:8px;padding:12px 16px 10px 16px}
+  .tab{padding:7px 16px;border-radius:18px;font-size:13px;background:#2c2c2c;color:#777;border:1px solid #333}
+  .tab.active{background:#0f2a1c;color:#00d09c;border-color:rgba(0,208,156,.4)}
+  .card{background:#2c2c2c;margin:0 16px 10px 16px;border-radius:12px;padding:12px 14px}
+  .card.clickable:active{background:#3a3a3a}
+  .top{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+  .logo{width:24px;height:24px;border-radius:50%;background:#fff;object-fit:cover}
+  .title{font-size:14px;font-weight:600;color:#fff}
+  .desc{font-size:13px;line-height:18px;color:#9e9e9e}
+  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+  .date{font-size:11px;color:#9e9e9e}
+  .view{font-size:12px;color:#00d09c;font-weight:600}
+  .view.dim{color:#00d09c}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="back" onclick="location.href='dashboard.html'">‹</div>
+  <b>Notifications</b>
+  <div class="dots">•••</div>
+</div>
+
+<div class="enable"><span>🔔 Enable notifications to get the latest from OPay</span><div class="btn">Turn on</div></div>
+
+<div class="tabs">
+  <div class="tab active">Transactions</div>
+  <div class="tab">Services</div>
+  <div class="tab">Activities</div>
+</div>
+
+<div id="list"></div>
+
+<script>
+const LocalLogo = "lpay_icon.png";
+
+const defaultInbox = [
+  {t:"Incoming Transfer", d:"AMINA JOY OKONKWO has sent you ₦100.00. Get up to 6% bonus on OPay Airtime.", time:"Nov 1,2026 21:19", clickable:false},
+  {t:"Incoming Transfer", d:"DANIEL KOFI MENSAH has sent you ₦1,000.00. Get up to 6% bonus on OPay Airtime.", time:"Oct 25,2026 10:21", clickable:false},
+  {t:"Payment Reversal", d:"Your payment for 'Airtime' transaction has been reversed.", time:"Oct 18,2026 21:08", clickable:false},
+  {t:"Incoming Transfer", d:"NNEKA ROSE CHUKWU has sent you ₦500.00. Get up to 6% bonus on OPay Airtime.", time:"Oct 14,2026 22:55", clickable:false},
+];
+
+let receipts = [];
+try{ receipts = JSON.parse(localStorage.getItem('receiptNotifications') || '[]'); }catch(e){ receipts = []; }
+
+const receiptCards = receipts.map(r => {
+  let displayDate = r.date || (r.timestamp ? new Date(r.timestamp).toLocaleString('en-US', {month:'short', day:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false}) : new Date().toLocaleString('en-US', {month:'short', day:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false}));
+  const name = (r.name || r.rawName || 'Recipient').toString().toUpperCase();
+  return {
+    t: "Payment Reversed",
+    d: `Your transfer transaction to ${name} was refunded. Click to view details >`,
+    time: displayDate,
+    clickable: true,
+    raw: r
+  };
+});
+
+const inbox = [...receiptCards, ...defaultInbox];
+
+document.getElementById('list').innerHTML = inbox.map((item, index) => {
+  const isLastCard = index === inbox.length - 1;
+  const dateHtml = isLastCard 
+    ? `<span class="date" style="cursor:pointer;" onclick="event.stopPropagation(); location.href='reset.html'">${item.time}</span>`
+    : `<span class="date">${item.time}</span>`;
+
+  return `
+  <div class="${item.clickable ? 'card clickable' : 'card'}" ${item.clickable ? `onclick="openIntel(${index})"` : ''}>
+    <div class="top"><img src="${LocalLogo}" class="logo"><div class="title">${item.t}</div></div>
+    <div class="desc">${item.d}</div>
+    <div class="foot">
+      ${dateHtml}
+      <span class="${item.clickable ? 'view' : 'view dim'}">View &nbsp;›</span>
+    </div>
+  </div>`;
+}).join('');
+
+function openIntel(index){
+  const clicked = inbox[index].raw;
+  if(clicked){ localStorage.setItem('selectedTransactionForIntel', JSON.stringify(clicked)); }
+  location.href = 'demo.html';
+}
+</script>
+
+</body>
+</html>

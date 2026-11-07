@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nigerian Banks Directory</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #080d16;
+    color: #fff;
+    font-family: Arial, sans-serif;
+}
+
+header {
+    padding: 30px 18px;
+    background: linear-gradient(135deg,#063c30,#101d2d);
+    text-align: center;
+}
+
+header h1 {
+    font-size: 27px;
+    margin-bottom: 10px;
+}
+
+header p {
+    color: #b5c9c2;
+    font-size: 13px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat {
+    background: #121d2b;
+    border: 1px solid #263747;
+    border-radius: 12px;
+    padding: 17px;
+    flex: 1;
+}
+
+.stat h2 {
+    color: #00e6a0;
+    font-size: 24px;
+}
+
+.stat p {
+    color: #9aaaba;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+input, select {
+    background: #121d2b;
+    border: 1px solid #29394b;
+    color: white;
+    padding: 14px;
+    border-radius: 9px;
+    outline: none;
+    font-size: 14px;
+}
+
+input {
+    flex: 1;
+    min-width: 180px;
+}
+
+select {
+    min-width: 170px;
+}
+
+input:focus, select:focus {
+    border-color: #00e6a0;
+}
+
+.results {
+    color: #aab9c8;
+    font-size: 13px;
+    margin-bottom: 15px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(155px,1fr));
+    gap: 13px;
+}
+
+.card {
+    background: #121d2b;
+    border: 1px solid #263747;
+    border-radius: 13px;
+    padding: 18px 10px;
+    text-align: center;
+    transition: .2s;
+    min-width: 0;
+}
+
+.card:hover {
+    border-color: #00e6a0;
+    transform: translateY(-3px);
+}
+
+.logo {
+    width: 65px;
+    height: 65px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 14px;
+    padding: 7px;
+    margin-bottom: 12px;
+}
+
+.bank-name {
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.category {
+    color: #00d99a;
+    font-size: 10px;
+    margin-top: 7px;
+    text-transform: uppercase;
+}
+
+.code {
+    color: #8798a9;
+    font-size: 10px;
+    margin-top: 6px;
+}
+
+.loading {
+    text-align: center;
+    padding: 50px 10px;
+    color: #00e6a0;
+}
+
+.error {
+    text-align: center;
+    padding: 30px;
+    color: #ff7777;
+}
+
+footer {
+    text-align: center;
+    padding: 30px 10px;
+    color: #718294;
+    font-size: 11px;
+}
+
+@media(max-width:450px) {
+    .grid {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+    }
+
+    .stats {
+        gap: 7px;
+    }
+
+    .stat {
+        padding: 12px;
+    }
+
+    .stat h2 {
+        font-size: 19px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🇳🇬 Nigerian Banks</h1>
+    <p>Complete Nigerian Financial Institutions Logo Directory</p>
+</header>
+
+<div class="container">
+
+    <div class="stats">
+        <div class="stat">
+            <h2 id="total">0</h2>
+            <p>Total Institutions</p>
+        </div>
+
+        <div class="stat">
+            <h2 id="showing">0</h2>
+            <p>Showing</p>
+        </div>
+    </div>
+
+    <div class="controls">
+
+        <input
+            type="search"
+            id="search"
+            placeholder="Search bank name..."
+        >
+
+        <select id="category">
+            <option value="all">All Categories</option>
+        </select>
+
+    </div>
+
+    <div class="results" id="results">
+        Loading Nigerian banks...
+    </div>
+
+    <div id="bankGrid" class="grid">
+        <div class="loading">Loading bank directory...</div>
+    </div>
+
+</div>
+
+<footer>
+    Nigerian Financial Institutions Directory<br>
+    Logo data: Nigerian Bank Logos Open Source Project
+</footer>
+
+<script>
+
+const DATA_URL =
+"https://cdn.jsdelivr.net/gh/Nigerian-Bank-Logos/ng-bank-logos@main/dist/banks_NGN.json";
+
+let banks = [];
+
+const grid = document.getElementById("bankGrid");
+const search = document.getElementById("search");
+const category = document.getElementById("category");
+
+function formatCategory(value) {
+    return (value || "Other")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+async function loadBanks() {
+
+    try {
+
+        const response = await fetch(DATA_URL);
+
+        if (!response.ok) {
+            throw new Error("Unable to retrieve bank directory");
+        }
+
+        const data = await response.json();
+
+        banks = data.banks || [];
+
+        if (!banks.length) {
+            throw new Error("No institutions were returned");
+        }
+
+        document.getElementById("total").textContent =
+            banks.length.toLocaleString();
+
+        createCategories();
+        renderBanks();
+
+    } catch (error) {
+
+        grid.innerHTML = `
+            <div class="error">
+                Unable to load the bank directory.<br><br>
+                Check your internet connection and reload.
+                <br><br>
+                ${error.message}
+            </div>
+        `;
+
+    }
+}
+
+function createCategories() {
+
+    const categories = [
+        ...new Set(
+            banks.map(bank => bank.category || "other")
+        )
+    ].sort();
+
+    categories.forEach(item => {
+
+        const option = document.createElement("option");
+
+        option.value = item;
+        option.textContent = formatCategory(item);
+
+        category.appendChild(option);
+
+    });
+
+}
+
+function renderBanks() {
+
+    const query = search.value.toLowerCase().trim();
+
+    const selectedCategory = category.value;
+
+    const filtered = banks.filter(bank => {
+
+        const name = (bank.name || "").toLowerCase();
+
+        const aliases = (bank.aliases || [])
+            .join(" ")
+            .toLowerCase();
+
+        const matchesSearch =
+            name.includes(query) ||
+            aliases.includes(query);
+
+        const matchesCategory =
+            selectedCategory === "all" ||
+            bank.category === selectedCategory;
+
+        return matchesSearch && matchesCategory;
+
+    });
+
+    document.getElementById("showing").textContent =
+        filtered.length.toLocaleString();
+
+    document.getElementById("results").textContent =
+        `Showing ${filtered.length.toLocaleString()} of ${banks.length.toLocaleString()} institutions`;
+
+    if (!filtered.length) {
+
+        grid.innerHTML = `
+            <div class="error">
+                No matching bank found.
+            </div>
+        `;
+
+        return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    filtered.forEach(bank => {
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const logo = document.createElement("img");
+        logo.className = "logo";
+        logo.alt = bank.name || "Bank logo";
+        logo.loading = "lazy";
+
+        logo.src =
+            bank.logos?.png ||
+            bank.logos?.svg ||
+            "";
+
+        logo.onerror = function() {
+            this.onerror = null;
+            this.src =
+            "https://cdn.jsdelivr.net/gh/Nigerian-Bank-Logos/ng-bank-logos@main/logos/_default.png";
+        };
+
+        const name = document.createElement("div");
+        name.className = "bank-name";
+        name.textContent = bank.name || "Unknown Institution";
+
+        const type = document.createElement("div");
+        type.className = "category";
+        type.textContent = formatCategory(bank.category);
+
+        const code = document.createElement("div");
+        code.className = "code";
+
+        if (bank.bankCode) {
+            code.textContent = "Code: " + bank.bankCode;
+        }
+
+        card.appendChild(logo);
+        card.appendChild(name);
+        card.appendChild(type);
+        card.appendChild(code);
+
+        fragment.appendChild(card);
+
+    });
+
+    grid.replaceChildren(fragment);
+
+}
+
+search.addEventListener("input", renderBanks);
+
+category.addEventListener("change", renderBanks);
+
+loadBanks();
+
+</script>
+
+</body>
+</html>

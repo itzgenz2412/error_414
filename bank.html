@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+<title>Transfer to Bank Account</title>
+<style>
+*{box-sizing:border-box;font-family:-apple-system,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:#1b1b1b;color:white;margin:0;padding:0}
+.header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#2c2c2c;position:sticky;top:0;z-index:10;border-bottom:1px solid #3a3a3a}
+.header-left{display:flex;align-items:center;gap:12px;cursor:pointer}
+.header b{font-size:15px}
+.banner{width:calc(100% - 24px);margin:12px 12px 0 12px;border-radius:12px;display:block;min-height:60px;background:#2c2c2c}
+.free{background:#2a1f3a;margin:10px 12px;border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:center}
+.free-icon{width:20px;height:20px;background:#6f3bff;border-radius:50%;display:flex;justify-content:center;align-items:center;font-size:10px}
+.free p{font-size:12px;color:#cbb9ff;margin:0}
+.free b{color:#b78cff}
+.card{background:#2c2c2c;margin:10px 12px;border-radius:16px;padding:18px 16px}
+.card-title{font-weight:600;font-size:14px;margin-bottom:6px}
+.input-line{border-bottom:1.5px solid #444;padding:16px 0;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.input-line input{background:transparent;border:none;color:white;width:100%;font-size:14px;outline:none}
+.bank-selected{display:flex;align-items:center;gap:10px}
+.bank-selected img{width:32px;height:32px;border-radius:50%;background:#fff;object-fit:contain;display:none;padding:3px}
+#bankNameDisplay{color:#fff;font-size:14px}
+#bankNameDisplay.placeholder{color:#666}
+#accountNameDisplay{display:none;background:#0f2e26;border-radius:12px;padding:12px 14px;margin-top:18px;color:#00d68f;font-size:13px;font-weight:700}
+#accountNameDisplay .check{width:18px;height:18px;background:#00d68f;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#0f2e26;font-size:11px;font-weight:900;margin-right:8px}
+.loader{display:none;color:#777;font-size:12px;margin-top:14px}
+.btn-next{width:100%;background:#234a36;color:#4a7a65;border:none;padding:15px;border-radius:28px;margin-top:18px;font-weight:800;font-size:14px;pointer-events:none;opacity:0.6}
+.btn-next.enabled{background:#00d68f;color:#000;pointer-events:auto;opacity:1}
+.monitor{background:#2c2c2c;margin:10px 12px;border-radius:12px;padding:14px;display:flex;gap:12px;align-items:center;border:1px solid #3a3a3a}
+.monitor img{width:28px;height:28px}
+.tabs-wrap{background:#2c2c2c;margin:10px 12px;border-radius:16px;overflow:hidden;border:1px solid #3a3a3a}
+.tabs{display:flex;gap:20px;padding:14px 16px 0 16px;border-bottom:1.5px solid #444}
+.tab{padding-bottom:12px;font-size:13px;color:#888;font-weight:600}
+.tab.active{color:#00d68f;border-bottom:2px solid #00d68f}
+.empty-wrap{padding:28px 20px 24px;text-align:center}
+.empty-wrap img{width:138px;display:block;margin:0 auto}
+.empty-text{color:#777;font-size:11.5px;margin-top:16px}
+#bankModal{position:fixed;inset:0;background:#1b1b1b;z-index:9999;display:none;flex-direction:column}
+.modal-header{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1.5px solid #444}
+.close-x{font-size:22px;cursor:pointer}
+.search-wrap{margin:10px 16px;background:#2c2c2c;border-radius:24px;padding:10px 14px;display:flex;gap:8px;align-items:center;border:1px solid #3a3a3a}
+.search-wrap input{background:transparent;border:none;outline:none;color:#fff;width:100%;font-size:13px}
+.freq-title{padding:12px 16px 8px;font-size:13px;font-weight:600;color:#aaa}
+.freq-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px 16px 12px;background:#2c2c2c;margin:0 12px;border-radius:12px;border:1px solid #3a3a3a}
+.freq-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0;cursor:pointer}
+.freq-icon{width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:4px}
+.freq-icon img{width:100%;height:100%;object-fit:contain;border-radius:50%}
+.freq-name{font-size:10px;color:#ccc;text-align:center;line-height:1.2;height:24px}
+.list-wrapper{flex:1;display:flex;overflow:hidden;position:relative;margin-top:8px}
+.bank-list{flex:1;overflow-y:auto;padding-right:22px;background:#1b1b1b}
+.letter{padding:8px 16px;font-size:12px;color:#888;background:#222;position:sticky;top:0;z-index:1;font-weight:600;border-bottom:1px solid #3a3a3a}
+.bank-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #3a3a3a;cursor:pointer}
+.bank-icon{width:38px;height:38px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;padding:3px}
+.bank-icon img{width:100%;height:100%;object-fit:contain;border-radius:50%}
+.az-index{position:absolute;right:0;top:0;bottom:0;width:20px;display:flex;flex-direction:column;align-items:center;padding-top:10px;gap:2px;background:#1b1b1b;z-index:5;border-left:1.5px solid #444}
+.az-index span{font-size:9.5px;color:#666;cursor:pointer}
+.loading-banks{padding:30px;text-align:center;color:#777;font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left" onclick="window.location.href='dashboard.html'"><span><</span><b>Transfer to Bank Account</b></div>
+  <span onclick="window.location.href='history.html'" style="cursor:pointer;color:#00d68f;font-size:13px;font-weight:700">History</span>
+</div>
+
+<img src="banner.png" class="banner" alt="Promo Banner">
+
+<div class="free"><div class="free-icon">✦</div><p>Free transfers for the day: <b>3</b></p></div>
+
+<div class="card">
+  <div class="card-title">Recipient Account</div>
+  <div class="input-line"><input type="text" inputmode="numeric" id="accountNumber" placeholder="Enter 10 digits Account Number" maxlength="10"></div>
+  <div class="input-line" id="openBankModal">
+    <div class="bank-selected">
+      <img id="selectedBankLogo" src="">
+      <div id="bankNameDisplay" class="placeholder">Select Bank</div>
+    </div>
+    <span>›</span>
+  </div>
+  <div id="accountNameDisplay"></div>
+  <p class="loader" id="loader">Checking name...</p>
+  <button class="btn-next" id="nextBtn">Next</button>
+</div>
+
+<div class="monitor"><img src="monitor_icon.png" alt="Monitor"><div style="font-size:13px;flex:1">Bank Transfer Success Rate Monitor</div><span style="color:#555">›</span></div>
+
+<div class="tabs-wrap">
+  <div class="tabs"><div class="tab">Recents</div><div class="tab active">Favourites</div><div style="margin-left:auto;color:#00d68f">⌕</div></div>
+  <div class="empty-wrap"><img src="favourites.png" alt="No Favourites"><div class="empty-text">No favourites yet, you can add a payer to your 'Favourites' list.</div></div>
+</div>
+
+<div id="bankModal">
+  <div class="modal-header"><span class="close-x" id="closeBankModal">✕</span><b>Select Bank</b></div>
+  <div class="search-wrap"><span style="color:#666">⌕</span><input type="text" id="bankSearch" placeholder="Search bank name..."></div>
+  <div class="freq-title">Frequently Used Bank</div>
+  <div class="freq-grid" id="freqGrid"></div>
+  <div class="list-wrapper">
+    <div class="bank-list" id="bankListContainer"><div class="loading-banks">Loading banks...</div></div>
+    <div class="az-index" id="azIndex"></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = "https://paystack-bank-backend.vercel.app";
+const LOGO_DATA_URL = "https://cdn.jsdelivr.net/gh/Nigerian-Bank-Logos/ng-bank-logos@main/dist/banks_NGN.json";
+let paystackBanks = [];
+let logoBanks = [];
+let selectedBankCode = "";
+let verificationOK=false, requestNumber=0, lastRealName="";
+
+const bankNameDisplay = document.getElementById("bankNameDisplay");
+const selectedBankLogo = document.getElementById("selectedBankLogo");
+const accInput = document.getElementById("accountNumber");
+const accNameDiv = document.getElementById("accountNameDisplay");
+const loader = document.getElementById("loader");
+const nextBtn = document.getElementById("nextBtn");
+const bankModal = document.getElementById("bankModal");
+const bankListContainer = document.getElementById("bankListContainer");
+
+function getBankLogo(banks, code, format = "svg") {
+  const bank = banks.find((entry) => entry.bankCode === code || entry.scCode === code);
+  return bank?.logos[format] ?? null;
+}
+
+const FREQUENT_CODES = ["999992","044","033","011","058","057"];
+
+async function loadAll(){
+  bankListContainer.innerHTML='<div class="loading-banks">Loading banks...</div>';
+  try{
+    const logoRes = await fetch(LOGO_DATA_URL);
+    const logoData = await logoRes.json();
+    logoBanks = logoData.banks || [];
+
+    const payRes = await fetch(`${API_BASE}/api/banks`);
+    const payData = await payRes.json();
+    const rawPay = payData.data || [];
+
+    paystackBanks = rawPay.map(pb=>{
+      const logoPng = getBankLogo(logoBanks, pb.code, "png");
+      const logoSvg = getBankLogo(logoBanks, pb.code, "svg");
+      const logo = logoPng || logoSvg || `https://ui-avatars.com/api/?name=${encodeURIComponent(pb.name)}&background=ffffff&color=000000&size=64`;
+      return {...pb, logo};
+    });
+
+    renderBanks(paystackBanks);
+    renderFreq();
+    renderAZ();
+  }catch(e){ bankListContainer.innerHTML='<div class="loading-banks">Unable to load banks</div>'; }
+}
+
+function renderBanks(list){
+  bankListContainer.innerHTML="";
+  const grouped={};
+  list.forEach(b=>{ const l=(b.name||"")[0].toUpperCase(); if(!grouped[l]) grouped[l]=[]; grouped[l].push(b); });
+  const frag=document.createDocumentFragment();
+  Object.keys(grouped).sort().forEach(letter=>{
+    const ld=document.createElement("div"); ld.className="letter"; ld.id=`sec-${letter}`; ld.textContent=letter; frag.appendChild(ld);
+    grouped[letter].forEach(b=>{
+      const row=document.createElement("div"); row.className="bank-row";
+      row.innerHTML=`<div class="bank-icon"><img loading="lazy" src="${b.logo}" alt="${b.name}"></div><div style="font-size:13px">${b.name}</div>`;
+      row.addEventListener("click",()=>selectBank(b.code,b.name,b.logo));
+      frag.appendChild(row);
+    });
+  });
+  bankListContainer.appendChild(frag);
+}
+function renderFreq(){
+  const grid=document.getElementById("freqGrid"); grid.innerHTML="";
+  FREQUENT_CODES.forEach(code=>{
+    const b = paystackBanks.find(x=>x.code===code);
+    if(!b) return;
+    const div=document.createElement("div"); div.className="freq-item";
+    div.innerHTML=`<div class="freq-icon"><img src="${b.logo}" alt="${b.name}"></div><div class="freq-name">${b.name}</div>`;
+    div.addEventListener("click",()=>selectBank(b.code,b.name,b.logo));
+    grid.appendChild(div);
+  });
+}
+function renderAZ(){
+  const az=document.getElementById("azIndex"); az.innerHTML="";
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(l=>{
+    const s=document.createElement("span"); s.textContent=l;
+    s.onclick=()=>{ const t=document.getElementById(`sec-${l}`); if(t) bankListContainer.scrollTo({top:t.offsetTop,behavior:"smooth"}); };
+    az.appendChild(s);
+  });
+}
+function selectBank(code,name,logo){
+  selectedBankCode=code;
+  bankNameDisplay.textContent=name; bankNameDisplay.classList.remove("placeholder");
+  selectedBankLogo.src=logo; selectedBankLogo.style.display="block";
+  bankModal.style.display="none";
+  verificationOK=false; nextBtn.classList.remove("enabled"); accNameDiv.style.display="none";
+  if(accInput.value.length===10) checkName();
+  localStorage.setItem("transfer_bank",name); localStorage.setItem("transfer_bankCode",code); localStorage.setItem("transfer_bankLogo",logo);
+}
+const nameCache={};
+async function verifyAccount(num, code){
+  const key=`${num}_${code}`;
+  if(nameCache[key]){ lastRealName=nameCache[key]; return true; }
+  const saved=localStorage.getItem(`acc_${key}`);
+  if(saved){ lastRealName=saved; nameCache[key]=saved; return true; }
+  try{
+    const controller=new AbortController(); const timeout=setTimeout(()=>controller.abort(), 8000);
+    const r=await fetch(`${API_BASE}/api/resolve?account_number=${num}&bank_code=${code}`, {signal:controller.signal});
+    clearTimeout(timeout);
+    const d=await r.json();
+    if(d.status===true && d.data?.account_name){ lastRealName=d.data.account_name; nameCache[key]=lastRealName; localStorage.setItem(`acc_${key}`, lastRealName); return true; }
+    return false;
+  }catch{ return false; }
+}
+async function checkName(){
+  const num=accInput.value.trim(); const code=selectedBankCode;
+  verificationOK=false; nextBtn.classList.remove("enabled");
+  if(num.length!==10 || !code){ loader.style.display="none"; accNameDiv.style.display="none"; return; }
+  const cur=++requestNumber;
+  loader.style.display="block"; accNameDiv.style.display="none";
+  const ok=await verifyAccount(num, code);
+  if(cur!==requestNumber) return;
+  loader.style.display="none";
+  if(ok){
+    accNameDiv.style.display="block"; accNameDiv.style.background="#122e26"; accNameDiv.style.color="#00d68f";
+    accNameDiv.innerHTML=`<span class="check">✓</span> ${lastRealName}`;
+    verificationOK=true; nextBtn.classList.add("enabled");
+    localStorage.setItem("transfer_account",num); localStorage.setItem("transfer_name",lastRealName);
+  }else{
+    accNameDiv.style.display="block"; accNameDiv.style.background="#2a1a1a"; accNameDiv.style.color="#ff5a5a";
+    accNameDiv.textContent="Could not resolve account name";
+  }
+}
+document.getElementById("openBankModal").addEventListener("click",()=>{ bankModal.style.display="flex"; if(!paystackBanks.length) loadAll(); });
+document.getElementById("closeBankModal").addEventListener("click",()=>bankModal.style.display="none");
+document.getElementById("bankSearch").addEventListener("input",function(){
+  const q=this.value.toLowerCase().trim();
+  renderBanks(paystackBanks.filter(b=>b.name.toLowerCase().includes(q)));
+});
+accInput.addEventListener("input",function(){
+  this.value=this.value.replace(/[^0-9]/g,"").slice(0,10);
+  requestNumber++; verificationOK=false; nextBtn.classList.remove("enabled"); accNameDiv.style.display="none";
+  if(this.value.length===10 && selectedBankCode) checkName();
+});
+nextBtn.addEventListener("click",()=>{ if(!verificationOK) return; window.location.href="payment.html"; });
+loadAll();
+const savedLogo=localStorage.getItem("transfer_bankLogo");
+const savedBank=localStorage.getItem("transfer_bank");
+const savedCode=localStorage.getItem("transfer_bankCode");
+if(savedBank && savedCode){ selectedBankCode=savedCode; bankNameDisplay.textContent=savedBank; bankNameDisplay.classList.remove("placeholder"); if(savedLogo){ selectedBankLogo.src=savedLogo; selectedBankLogo.style.display="block"; } }
+</script>
+</body>
+</html>
