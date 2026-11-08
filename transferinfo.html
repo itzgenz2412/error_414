@@ -1,0 +1,167 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Transaction Details</title><style>
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+html,body{margin:0;padding:0;background:#1b1b1b;color:white;min-height:100vh}
+.page{max-width:480px;margin:0 auto;min-height:100vh;background:#1b1b1b;padding-bottom:90px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#2c2c2c}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-left span{font-size:20px;cursor:pointer}
+.header b{font-size:14px;font-weight:600}
+.profile-icon{width:28px;height:28px;border-radius:50%;background:#2a2a2a;display:flex;align-items:center;justify-content:center;font-size:14px;color:#00d09c;overflow:hidden}
+.profile-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.card{background:#2c2c2c;border-radius:12px;margin:12px;padding:16px}
+.center-card{text-align:center;padding:20px 16px 16px}
+.opay-icon{width:56px;height:56px;margin:0 auto 12px auto;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;border:3px solid #333}
+.opay-icon img{width:100%;height:100%;object-fit:cover}
+.transfer-to{font-size:13px;font-weight:600;margin-bottom:8px}
+.amount{font-size:26px;font-weight:800;margin-bottom:8px}
+.success{color:#00d09c;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px}
+.success i{width:16px;height:16px;background:#00d09c;color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;font-style:normal}
+.section-title{font-size:13px;font-weight:700;margin-bottom:14px}
+.detail-row{display:flex;justify-content:space-between;padding:8px 0;font-size:12px}
+.detail-row span:first-child{color:#888;font-size:11px;max-width:40%}
+.detail-row span:last-child{font-weight:500;text-align:right;max-width:60%;word-break:break-word}
+.divider{border:none;border-top:1px dashed #333;margin:14px 0}
+.more-links{display:flex;gap:20px;margin-top:14px}
+.more-links div{flex:1;display:flex;align-items:center;gap:6px;color:#00d09c;font-size:11px;font-weight:600}
+.share-btn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:448px;background:#00d09c;color:#000;border:none;padding:16px;border-radius:30px;font-weight:800;font-size:14px;cursor:pointer}
+</style></head><body><div class="page">  <div class="header">
+    <div class="header-left">
+      <span onclick="location.href='history.html'"><</span>
+      <b>Transaction Details</b>
+    </div><div class="profile-icon"><img src="supportf.png" alt="Support"></div>
+  </div>  <div class="card center-card"><div class="opay-icon">
+  <img id="bankIcon" src="" alt="Bank">
+</div>
+<div class="transfer-to" id="tTo">Transfer details</div>
+<div class="amount" id="tAmt">₦500.00</div>
+<div class="success"><i>✓</i> Successful</div>
+  </div>  <div class="card"><div class="section-title">Transaction Details</div>
+<div class="detail-row"><span>Recipient Details</span><span id="rDetails"></span></div>
+<div class="detail-row"><span>Transaction No.</span><span><span id="txNo"></span> ⎙</span></div>
+<div class="detail-row"><span>Payment Method</span><span>Wallet <span style="color:#888">></span></span></div>
+<div class="detail-row"><span>Transaction Date</span><span id="txDate"></span></div>
+  </div>  <div class="card"><div class="section-title">More Actions</div>
+<div class="detail-row"><span>Category</span><span>Transfer <span style="color:#888">></span></span></div>
+<hr class="divider">
+<div class="more-links"><div>⟳ Transfer Again</div><div>◷ View Records</div></div>
+  </div>  <button class="share-btn" onclick="shareReceiptSilently()">Share Receipt</button></div><script>
+let tx = {};
+try { tx = JSON.parse(sessionStorage.getItem('lpaySelectedTransaction') || sessionStorage.getItem('lpayReceipt') || localStorage.getItem('selectedTransaction') || '{}'); } catch(e) { tx = {}; }
+const meta = tx.metadata && typeof tx.metadata === 'object' ? tx.metadata : {};
+function pick(){ for(const v of arguments){ if(v !== undefined && v !== null && String(v).trim() !== '') return v; } return ''; }
+const recipientName = String(pick(tx.name, meta.name, tx.recipient_name, meta.recipient_name, localStorage.getItem('transfer_name'), 'Bank Account')).toUpperCase();
+const recipientBank = String(pick(tx.bank, meta.bank, tx.bank_name, meta.bank_name, localStorage.getItem('transfer_bank'), 'OPay'));
+const recipientAccount = String(pick(tx.account, meta.account, tx.account_number, meta.account_number, tx.accountNumber, meta.accountNumber, localStorage.getItem('transfer_account'), '--'));
+const transferAmount = Number(pick(tx.amount, meta.amount, 0)) || 0;
+const transferTimestamp = pick(tx.timestamp, tx.created_at, meta.timestamp, Date.now());
+const BANK_DATABASE_URL = "https://cdn.jsdelivr.net/gh/Nigerian-Bank-Logos/ng-bank-logos@main/dist/banks_NGN.json";
+const DEFAULT_LOGO = "https://cdn.jsdelivr.net/gh/Nigerian-Bank-Logos/ng-bank-logos@main/logos/_default.png";
+function normalizeBankName(v){return String(v||"").toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]/g,"");}
+async function loadBankLogo(bankName){
+  const img=document.getElementById("bankIcon");
+  try{
+    const r=await fetch(BANK_DATABASE_URL);if(!r.ok) throw new Error();
+    const data=await r.json();const banks=data.banks||[];
+    const s=normalizeBankName(bankName);
+    let bank=banks.find(e=>{const n=normalizeBankName(e.name);if(n===s) return true;const al=Array.isArray(e.aliases)?e.aliases:[];return al.some(a=>normalizeBankName(a)===s);});
+    if(!bank){bank=banks.find(e=>{const n=normalizeBankName(e.name);const al=Array.isArray(e.aliases)?e.aliases:[];if(n.includes(s)||s.includes(n)) return true;return al.some(a=>{const aa=normalizeBankName(a);return aa.includes(s)||s.includes(aa);});});}
+    if(bank&&bank.logos&&bank.logos.png){img.src=bank.logos.png;return;}
+    img.src=DEFAULT_LOGO;
+  }catch(e){img.src=DEFAULT_LOGO;}
+}
+loadBankLogo(recipientBank);
+function randomTxNo(){let s='2604';for(let i=0;i<20;i++){s+=Math.floor(Math.random()*10);}return s;}
+document.getElementById('txNo').textContent=randomTxNo();
+function formatDate(d){
+  const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const day=d.getDate();let suf='th';if(day===1||day===21||day===31) suf='st';else if(day===2||day===22) suf='nd';else if(day===3||day===23) suf='rd';
+  return `${months[d.getMonth()]} ${day}${suf}, ${d.getFullYear()} ${d.toLocaleTimeString()}`;
+}
+const dateObj=transferTimestamp?new Date(transferTimestamp):new Date();
+document.getElementById('txDate').textContent=formatDate(dateObj);
+const name=recipientName;
+document.getElementById('tTo').textContent='Transfer to '+name;
+document.getElementById('tAmt').textContent='₦'+transferAmount.toLocaleString('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});
+document.getElementById('rDetails').innerHTML='';
+document.getElementById('rDetails').append(document.createTextNode(name));
+const accountLine=document.createElement('small');
+accountLine.style.cssText='color:#888;font-size:10px';
+accountLine.textContent=recipientBank+' | '+recipientAccount;
+document.getElementById('rDetails').append(document.createElement('br'),accountLine);
+
+/* === 5 TIMES LIMIT + REAL ICON NOTIFICATION === */
+const MAX_SEND = 15;
+
+async function triggerRealNotification(receipt){
+  const amtText = "₦"+Number(receipt.amount).toLocaleString(undefined,{minimumFractionDigits:2});
+  const title = "Payment Reversed";
+  const body = `Your transfer to ${receipt.name} was refunded - ${amtText}`;
+
+  // 1. Native APK notification with icon - uses your onCreate code
+  try{
+    if(window.AndroidNotify && typeof window.AndroidNotify.showNotification === 'function'){
+      window.AndroidNotify.showNotification(title, body);
+      try{ window.AndroidNotify.vibrate(); }catch(e){}
+    }
+  }catch(e){}
+
+  // 2. Browser notification with png icon - will show lpay_icon.png as icon
+  try{
+    if(!('Notification' in window)) return;
+    if(Notification.permission === 'default'){
+      await Notification.requestPermission();
+    }
+    if(Notification.permission === 'granted'){
+      // Use your png as icon so notification looks real
+      new Notification(title, {
+        body: body,
+        icon: 'lpay_icon.png', // <-- your opay png, this makes icon show
+        badge: 'lpay_icon.png',
+        vibrate: [200,100,200],
+        tag: 'opay-reversed-'+receipt.id
+      });
+    }
+  }catch(e){}
+}
+
+function shareReceiptSilently(){
+  try{
+    let count = parseInt(localStorage.getItem('receiptSendCount') || '0', 10);
+    if(isNaN(count)) count = 0;
+    if(count >= MAX_SEND){ return; }
+
+    const receipt = {
+      id: 'receipt_' + Date.now(),
+      type: 'transaction_receipt',
+      title: 'Payment Reversed',
+      message: 'Your transfer transaction was refunded',
+      name: name,
+      amount: transferAmount,
+      bank: recipientBank,
+      account: recipientAccount,
+      transactionNo: document.getElementById('txNo').textContent,
+      date: document.getElementById('txDate').textContent,
+      status: 'Reversed',
+      category: 'Transfer',
+      paymentMethod: 'Wallet',
+      timestamp: Date.now()
+    };
+
+    let notifications = JSON.parse(localStorage.getItem('receiptNotifications') || '[]');
+    if(!Array.isArray(notifications)) notifications = [];
+    notifications.unshift(receipt);
+    localStorage.setItem('receiptNotifications', JSON.stringify(notifications));
+    localStorage.setItem('receiptSendCount', String(count + 1));
+    triggerRealNotification(receipt);
+  }catch(error){}
+}
+
+if('Notification' in window && Notification.permission === 'default'){
+  Notification.requestPermission();
+}
+</script></body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Transaction Details</title>
+<style>
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:#121212;color:white;min-height:100vh}
+.page{max-width:480px;margin:0 auto;min-height:100vh;background:#121212;padding-bottom:90px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#1e1e1e}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-left span{font-size:20px;cursor:pointer}
+.header b{font-size:14px;font-weight:600}
+.profile-icon{width:28px;height:28px;border-radius:50%;background:#2a2a2a;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.profile-icon img{width:100%;height:100%;object-fit:contain}
+.card{background:#1e1e1e;border-radius:12px;margin:12px;padding:16px}
+.center-card{text-align:center;padding:20px 16px 16px}
+.data-icon{width:56px;height:56px;margin:0 auto 12px auto;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;border:3px solid #2a2a2a}
+.data-icon img{width:100%;height:100%;object-fit:cover}
+.network-name{font-size:13px;font-weight:600;margin-bottom:8px}
+.amount{font-size:26px;font-weight:800;margin-bottom:8px}
+.success{color:#00d68f;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px}
+.success i{width:16px;height:16px;background:#00d68f;color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;font-style:normal}
+.amount-info{margin-top:18px;border-top:1px dashed #333;padding-top:10px}
+.amount-row{display:flex;justify-content:space-between;padding:7px 0;font-size:12px}
+.amount-label{color:#888;font-size:11px}
+.amount-value{font-weight:600;text-align:right}
+.bonus-value{color:#00d68f;font-weight:600;text-align:right}
+.section-title{font-size:13px;font-weight:700;margin-bottom:14px}
+.detail-row{display:flex;justify-content:space-between;padding:8px 0;font-size:12px}
+.detail-row span:first-child{color:#888;font-size:11px;max-width:40%}
+.detail-row span:last-child{font-weight:500;text-align:right;max-width:60%;word-break:break-word}
+.detail-value{color:white !important}
+.share-btn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:448px;background:#00d68f;color:#000;border:none;padding:16px;border-radius:30px;font-weight:800;font-size:14px}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="header-left">
+      <span onclick="goBack()">‹</span>
+      <b>Transaction Details</b>
+    </div>
+    <div class="profile-icon">
+      <img src="supportf.png" alt="Support" onerror="this.src='data-icon.png'">
+    </div>
+  </div>
+  <div class="card center-card">
+    <div class="data-icon">
+      <img id="dataIcon" src="data-icon.png" alt="Network">
+    </div>
+    <div class="network-name" id="networkName">Mobile Data</div>
+    <div class="amount" id="mainAmount">₦0.00</div>
+    <div class="success"><i>✓</i> Successful</div>
+    <div class="amount-info">
+      <div class="amount-row"><span class="amount-label">Amount</span><span class="amount-value" id="amount">₦0.00</span></div>
+      <div class="amount-row"><span class="amount-label">Cashback Used</span><span class="amount-value" id="cashbackUsed">-₦0.00</span></div>
+      <div class="amount-row"><span class="amount-label">Amount Paid</span><span class="amount-value" id="amountPaid">₦0.00</span></div>
+      <div class="amount-row"><span class="amount-label">OPay Bonus</span><span class="bonus-value" id="bonus">+₦0.00 Cashback</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-title">Transaction Details</div>
+    <div class="detail-row"><span>Recipient Mobile</span><span class="detail-value" id="recipient">--</span></div>
+    <div class="detail-row"><span>Data Bundle</span><span class="detail-value" id="bundle">--</span></div>
+    <div class="detail-row"><span>Transaction Type</span><span class="detail-value">Mobile Data</span></div>
+    <div class="detail-row"><span>Payment Method</span><span class="detail-value">Wallet <span style="color:#888">></span></span></div>
+    <div class="detail-row"><span>Transaction No.</span><span class="detail-value"><span id="transactionNo">--</span> &nbsp;⎙</span></div>
+    <div class="detail-row"><span>Transaction Date</span><span class="detail-value" id="transactionDate">--</span></div>
+  </div>
+  <button class="share-btn" onclick="return false;">Share Receipt</button>
+</div>
+<script>
+function goBack(){ window.location.href = "history.html"; }
+let transaction = null;
+try {
+  transaction = JSON.parse(
+    sessionStorage.getItem('lpaySelectedTransaction') ||
+    sessionStorage.getItem('lpayReceipt') ||
+    localStorage.getItem('selectedTransaction') ||
+    'null'
+  );
+} catch(error) { transaction = null; }
+
+if (!transaction || typeof transaction !== 'object') {
+  transaction = {
+    phone: localStorage.getItem("transactionPhone") || "",
+    bundle: localStorage.getItem("transactionBundle") || "Mobile Data",
+    amount: localStorage.getItem("transactionAmount") || "0",
+    cashback: localStorage.getItem("transactionCashback") || "0",
+    date: localStorage.getItem("transactionDate") || "",
+    time: localStorage.getItem("transactionTime") || "",
+    timestamp: Date.now(),
+    metadata: {}
+  };
+}
+
+// Supabase wallet_transactions stores service details in metadata.
+const meta = transaction.metadata && typeof transaction.metadata === 'object' ? transaction.metadata : {};
+function firstValue(){
+  for (const value of arguments) {
+    if (value !== undefined && value !== null && String(value).trim() !== '') return value;
+  }
+  return '';
+}
+function numberValue(value){
+  if(typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const match = String(value ?? "").replace(/,/g, "").match(/[+-]?\s*₦?\s*\d+(?:\.\d+)?/);
+  return match ? (Number(match[0].replace(/[₦\s+]/g, "")) || 0) : 0;
+}
+function money(value){ return "₦" + numberValue(value).toLocaleString("en-NG",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function formatPhone(phone){
+  const raw=String(phone || ''); const value=raw.replace(/\D/g,"");
+  if(value.length===11) return value.substring(0,4)+" "+value.substring(4,7)+" "+value.substring(7);
+  return raw || "--";
+}
+function getNetwork(phone){
+  const p=String(phone || '').replace(/\D/g,'').substring(0,4);
+  const networks={MTN:["0703","0706","0803","0806","0810","0813","0814","0816","0903","0906","0913","0916"],Airtel:["0701","0708","0802","0808","0812","0901","0902","0904","0907","0911","0912"],Glo:["0705","0805","0807","0811","0815","0905","0915"],"9mobile":["0809","0817","0818","0908","0909"]};
+  for(const name in networks) if(networks[name].includes(p)) return name;
+  return firstValue(meta.network,transaction.network,'Mobile Data');
+}
+function networkIcon(network){const icons={MTN:"mtn.png",Airtel:"airtel.png",Glo:"glo.png","9mobile":"9mobile.png"};return icons[network]||"data-icon.png";}
+function transactionNumber(){
+  return firstValue(transaction.transactionNumber,transaction.reference,transaction.id) || ("26"+String(transaction.timestamp||Date.now()).replace(/\D/g,'').slice(-18));
+}
+const phoneValue=firstValue(transaction.phone,meta.phone,meta.recipient,meta.mobile,localStorage.getItem('transactionPhone'));
+const bundle=firstValue(transaction.bundle,meta.bundle,meta.plan,localStorage.getItem('transactionBundle'),'Mobile Data');
+const amount=numberValue(firstValue(transaction.amount,meta.amount,0));
+const cashbackUsed=numberValue(firstValue(transaction.cashbackUsed,transaction.usedBonus,meta.cashbackUsed,meta.cashback_used,meta.usedBonus,0));
+const bonus=numberValue(firstValue(transaction.bonus,transaction.cashbackBonus,transaction.bonusAmount,transaction.opayBonus,transaction.cashbackAmount,meta.bonus,meta.cashbackBonus,meta.cashback,transaction.cashback,localStorage.getItem('transactionCashback'),0));
+const amountPaid=numberValue(firstValue(transaction.amountPaid,meta.amountPaid,Math.max(0,amount-cashbackUsed)));
+const network=getNetwork(phoneValue);
+document.getElementById("networkName").textContent=network;
+document.getElementById("dataIcon").src=networkIcon(network);
+document.getElementById("mainAmount").textContent=money(amount);
+document.getElementById("amount").textContent=money(amount);
+document.getElementById("cashbackUsed").textContent="-"+money(cashbackUsed);
+document.getElementById("amountPaid").textContent=money(amountPaid);
+document.getElementById("bonus").textContent="+"+money(bonus)+" Cashback";
+document.getElementById("recipient").textContent=formatPhone(phoneValue);
+document.getElementById("bundle").textContent=bundle + (String(bundle).toLowerCase().includes('plan')?'':' Plan');
+document.getElementById("transactionNo").textContent=transactionNumber();
+const dateText=firstValue(transaction.date,meta.date,localStorage.getItem('transactionDate'));
+const timeText=firstValue(transaction.time,meta.time,localStorage.getItem('transactionTime'));
+let displayDate=dateText ? String(dateText)+(timeText?' '+timeText:'') : '';
+if(!displayDate && transaction.timestamp) displayDate=new Date(Number(transaction.timestamp)).toLocaleString('en-NG');
+document.getElementById("transactionDate").textContent=displayDate||'--';
+sessionStorage.setItem('lpaySelectedTransaction',JSON.stringify(transaction));
+</script>
+</body>
+</html>
