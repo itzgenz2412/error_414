@@ -123,7 +123,11 @@ function getNetwork(phone){
 }
 function networkIcon(network){const icons={MTN:"mtn.png",Airtel:"airtel.png",Glo:"glo.png","9mobile":"9mobile.png"};return icons[network]||"data-icon.png";}
 function transactionNumber(){
-  return firstValue(transaction.transactionNumber,transaction.reference,transaction.id) || ("26"+String(transaction.timestamp||Date.now()).replace(/\D/g,'').slice(-18));
+  // Match the original DemoWallet behaviour: never use title, type, reference,
+  // or database id as the displayed transaction number.
+  if (transaction.transactionNumber) return transaction.transactionNumber;
+  const stamp = String(transaction.timestamp || Date.now());
+  return "26" + stamp.replace(/\D/g, "").slice(-18);
 }
 const phoneValue=firstValue(transaction.phone,meta.phone,meta.recipient,meta.mobile,localStorage.getItem('transactionPhone'));
 const bundle=firstValue(transaction.bundle,meta.bundle,meta.plan,localStorage.getItem('transactionBundle'),'Mobile Data');
