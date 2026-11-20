@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -79,9 +80,87 @@ button,a{outline:none!important}
 .hit{position:absolute;background:transparent;border:none;cursor:pointer}
 .eye-hit{left:32%;top:8%;width:12%;height:30%}.history-hit{left:54%;top:2%;width:44%;height:38%}.add-hit{right:2%;top:58%;width:32%;height:38%;border-radius:20px}
 .to-opay{left:0;top:0;width:33%;height:100%}.to-bank{left:33%;top:0;width:33%;height:100%}.data-hit{left:25%;top:0;width:25%;height:50%}
+
+/* LOGOUT CONFIRMATION POPUP */
+.logout-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.75);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index:99999;
+}
+.logout-overlay.show{
+  display:flex;
+}
+.logout-box{
+  width:100%;
+  max-width:340px;
+  background:#1b1b1b;
+  border:1px solid #333;
+  border-radius:20px;
+  padding:25px 20px;
+  text-align:center;
+  animation:logoutPop .2s ease;
+}
+@keyframes logoutPop{
+  from{opacity:0;transform:scale(.92)}
+  to{opacity:1;transform:scale(1)}
+}
+.logout-icon{
+  width:55px;
+  height:55px;
+  border-radius:50%;
+  background:rgba(29,206,159,.12);
+  color:#1dce9f;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:27px;
+  margin:0 auto 15px;
+}
+.logout-box h3{
+  color:#fff;
+  margin:0 0 10px;
+  font-size:19px;
+}
+.logout-box p{
+  color:#aaa;
+  font-size:13px;
+  line-height:1.5;
+  margin:0 0 22px;
+}
+.logout-actions{
+  display:flex;
+  gap:12px;
+}
+.logout-actions button{
+  flex:1;
+  border:none;
+  border-radius:10px;
+  padding:13px 10px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+}
+.logout-cancel{
+  background:#303030;
+  color:#fff;
+}
+.logout-confirm{
+  background:#1dce9f;
+  color:#111;
+}
+.logout-confirm:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
 </style>
 </head>
 <body>
+
 <div class="top">
 <div class="top-left"><img src="avatar.png" id="userAvatar" fetchpriority="high" decoding="async" onerror="this.style.display='none'"><span style="font-size:14px;font-weight:600" id="userNameDisplay"></span></div>
 <div class="top-right">
@@ -152,15 +231,36 @@ Available Balance</span><img src="eye.png" id="eye" decoding="async"></div><span
 <div class="nav-item" id="meBtn"><img src="me.png" decoding="async" onerror="this.style.display='none'"><span>Me</span></div>
 </div>
 
+<!-- LOGOUT POPUP -->
+<div class="logout-overlay" id="logoutOverlay">
+  <div class="logout-box">
+    <div class="logout-icon">↪</div>
+    <h3>Log Out?</h3>
+    <p>Are you sure you want to log out of your account?</p>
+    <div class="logout-actions">
+      <button type="button" class="logout-cancel" id="cancelLogout">Cancel</button>
+      <button type="button" class="logout-confirm" id="confirmLogout">Log Out</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (async()=>{
  const $=id=>document.getElementById(id),ADMIN='gentesjop@gmail.com';let hidden=false,lastBalance=null;
+
  // Never hold the dashboard on a loading label while Supabase responds.
  $('bal').textContent='—';
+
  const money=n=>'₦'+Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});
- function showBalance(n){lastBalance=Number(n);$('bal').textContent=hidden?'**** ›':money(n)+' ›';}
+
+ function showBalance(n){
+   lastBalance=Number(n);
+   $('bal').textContent=hidden?'**** ›':money(n)+' ›';
+ }
+
  function renderLatest(tx){
-   const card=$('latestHistoryCard');if(!tx){card.style.display='none';return;}
+   const card=$('latestHistoryCard');
+   if(!tx){card.style.display='none';return;}
    const m=tx.metadata||{},incoming=tx.type==='in',transfer=m.category==='transfer';
    $('latestIcon').src=incoming?'funds.png':transfer?'transfertobank.png':'data-icon.png';
    $('latestName').textContent=tx.title||tx.name||'Transaction';
@@ -170,9 +270,14 @@ Available Balance</span><img src="eye.png" id="eye" decoding="async"></div><span
    $('latestStatus').textContent=tx.status||'Successful';
    card.style.display='flex';
    // Incoming credits are informational only; only outgoing transactions open a receipt.
-   card.onclick=null;card.style.cursor=tx.type==='out'?'pointer':'default';
-   if(tx.type==='out')card.onclick=()=>{sessionStorage.setItem('lpaySelectedTransaction',JSON.stringify(tx));location.href=transfer?'transferinfo.html':'transaction.html';};
+   card.onclick=null;
+   card.style.cursor=tx.type==='out'?'pointer':'default';
+   if(tx.type==='out')card.onclick=()=>{
+     sessionStorage.setItem('lpaySelectedTransaction',JSON.stringify(tx));
+     location.href=transfer?'transferinfo.html':'transaction.html';
+   };
  }
+
  async function refreshDashboard(){
    const results=await Promise.allSettled([LPayWallet.balance(),LPayWallet.transactions(1)]);
    if(results[0].status==='fulfilled')showBalance(results[0].value);
@@ -180,26 +285,98 @@ Available Balance</span><img src="eye.png" id="eye" decoding="async"></div><span
    if(results[1].status==='fulfilled')renderLatest(results[1].value[0]||null);
    else console.warn('History preview refresh:',results[1].reason);
  }
- const toggle=e=>{e?.preventDefault();hidden=!hidden;if(lastBalance!==null)showBalance(lastBalance);else $('bal').textContent=hidden?'**** ›':'—';};
- $('eye')?.addEventListener('click',toggle);$('eyeHit')?.addEventListener('click',toggle);$('bal')?.addEventListener('click',toggle);
+
+ const toggle=e=>{
+   e?.preventDefault();
+   hidden=!hidden;
+   if(lastBalance!==null)showBalance(lastBalance);
+   else $('bal').textContent=hidden?'**** ›':'—';
+ };
+
+ $('eye')?.addEventListener('click',toggle);
+ $('eyeHit')?.addEventListener('click',toggle);
+ $('bal')?.addEventListener('click',toggle);
+
  try{
    const user=await LPayWallet.sessionUser();
-   if(!user){location.replace('index.html');return;}
+
+   if(!user){
+     location.replace('index.html');
+     return;
+   }
+
    // Reuse this account's saved display text immediately; update it from the authenticated profile.
    const fallbackName=(user.email?.split('@')[0]||'').trim();
    const savedName=LPayWallet.cachedProfileText(user.id);
    const profileName=(user.user_metadata?.full_name||user.user_metadata?.name||fallbackName||'').trim();
+
    $('userNameDisplay').textContent='Hi, '+(savedName||profileName);
-   if(profileName){LPayWallet.saveProfileText(user.id,profileName);$('userNameDisplay').textContent='Hi, '+profileName;}
+
+   if(profileName){
+     LPayWallet.saveProfileText(user.id,profileName);
+     $('userNameDisplay').textContent='Hi, '+profileName;
+   }
+
    // Show this user's last confirmed balance and transaction preview immediately.
    const cached=LPayWallet.cachedBalance(user.id);
-   if(cached!==null)showBalance(cached);else $('bal').textContent='—';
+   if(cached!==null)showBalance(cached);
+   else $('bal').textContent='—';
+
    const cachedRows=LPayWallet.cachedTransactions(user.id,1);
    if(cachedRows&&cachedRows.length)renderLatest(cachedRows[0]);
+
    // Refresh current wallet and report quietly in the background.
    refreshDashboard();
- }catch(e){if(lastBalance===null)$('bal').textContent='Unavailable';console.error(e);}
- $('meBtn')?.addEventListener('click',async()=>{if(confirm('Logout?')){await LPayWallet.client.auth.signOut();location.replace('index.html');}});
+
+ }catch(e){
+   if(lastBalance===null)$('bal').textContent='Unavailable';
+   console.error(e);
+ }
+
+ // LOGOUT CONFIRMATION
+ const logoutOverlay=$('logoutOverlay');
+ const cancelLogout=$('cancelLogout');
+ const confirmLogout=$('confirmLogout');
+
+ // Open popup when Me is tapped.
+ $('meBtn')?.addEventListener('click',()=>{
+   logoutOverlay?.classList.add('show');
+ });
+
+ // Cancel logout.
+ cancelLogout?.addEventListener('click',()=>{
+   logoutOverlay?.classList.remove('show');
+ });
+
+ // Close popup when the dark background is tapped.
+ logoutOverlay?.addEventListener('click',e=>{
+   if(e.target===logoutOverlay){
+     logoutOverlay.classList.remove('show');
+   }
+ });
+
+ // Confirm logout through Supabase.
+ confirmLogout?.addEventListener('click',async()=>{
+   confirmLogout.disabled=true;
+   confirmLogout.textContent='Logging out...';
+
+   try{
+     const {error}=await LPayWallet.client.auth.signOut();
+
+     if(error)throw error;
+
+     location.replace('login.html');
+
+   }catch(error){
+     console.error('Logout failed:',error);
+
+     confirmLogout.disabled=false;
+     confirmLogout.textContent='Log Out';
+
+     alert('Unable to log out. Please try again.');
+   }
+ });
+
 })();
 </script>
 </body>
